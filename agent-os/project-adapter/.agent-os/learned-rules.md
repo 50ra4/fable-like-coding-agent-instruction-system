@@ -15,6 +15,14 @@ Promotion criteria:
   reason, so future sessions understand why it stopped applying.
 - Rules must be observable and checkable ("run X before committing to
   migrations/"), never vague wording ("be careful", "write nicer code").
+
+Initially this file holds everything in one place. If it grows past
+roughly 10 active rules or 300 lines, run `scripts/split-learned-rules.sh
+--adapter <dir>` to move `Status: active` rule blocks into
+`.agent-os/rules/<scope>.md` (global/project/directory/file-pattern, by
+each rule's Scope field). This file then keeps an "## Active rules index"
+pointing at the moved rules; candidate and deprecated rules always stay
+here.
 -->
 
 # Learned Rules: {{PROJECT_NAME}}

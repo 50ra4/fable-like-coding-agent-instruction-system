@@ -87,6 +87,26 @@ bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for codex
 
 `run-agent-evals` スキルを使い、`.agent-os/evals.md` に保存された評価シナリオに対してエージェントの振る舞いを実行・採点します。instructions（CLAUDE.md、skills、learned-rules など）を変更したときは必ずこれを実行し、変更前後で精度が劣化していないか（precision regression）を確認します。回帰が見つかった場合は、直前の instructions の変更を疑い、`improve-instructions` スキルで修正します。
 
+半自動化のため `scripts/run-agent-evals.sh` を使います。エージェント自身がタスクを実行する部分は自動化されません（あくまでエージェントの仕事です）が、一覧・表示・検証・記録は次のように補助されます。
+
+```bash
+# 1. eval 一覧と直近の結果を確認する
+bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --list
+
+# 2. 対象 eval の全文を確認する
+bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --show <eval-name>
+
+# 3. （ここでエージェントが Task を実際に実行する）
+
+# 4. Validation command を確認する（--exec は command-map.md に
+#    記載されたコマンドのみ実行し、それ以外は拒否する。"Manual review"
+#    は常に手動確認）
+bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --check <eval-name> [--exec]
+
+# 5. 結果を Results テーブルに記録する
+bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --record <eval-name> --result pass|fail --model <model-name> [--notes <text>]
+```
+
 ## global layer と project adapter の責務分離
 
 - **Global Layer** には、プロジェクトを問わず常に成り立つ最小限の原則だけを書きます。特定の言語・フレームワーク・ディレクトリ構成・コマンドは絶対に書きません。
@@ -101,6 +121,18 @@ CLAUDE.md、skills、learned-rules.md 等が増えすぎて読みにくくなっ
 - `scripts/detect-rule-conflicts.sh` を実行し、矛盾するルールを検出する。
 - 古くなった・使われなくなったルールを `deprecated` として整理する（削除ではなくマーク）。
 - 数行を超える手順が常時読み込みファイル（CLAUDE.md / AGENTS.md）に紛れ込んでいたら、`skills/` へ移動し、元の場所には一行のポインタだけを残す。
+
+`learned-rules.md` 自体が肥大化した場合（目安: active なルールが10件を超える、またはファイルが300行を超える）は、`scripts/split-learned-rules.sh` で `Status: active` のルールをスコープ別ファイル（`.agent-os/rules/global.md` / `project.md` / `directory.md` / `file-pattern.md`、各ルールの `Scope:` フィールドに従う）へ分割できます。`learned-rules.md` には各ルールへのポインタとなる `## Active rules index` が残り、candidate・deprecated のルールは常に `learned-rules.md` に残ります。
+
+```bash
+# 移動計画だけを確認する（ファイルは変更しない）
+bash agent-os/scripts/split-learned-rules.sh --adapter "$TARGET" --dry-run
+
+# 実際に分割する
+bash agent-os/scripts/split-learned-rules.sh --adapter "$TARGET"
+```
+
+分割は任意（optional）です。初期状態は単一ファイルのままで問題なく、`detect-rule-conflicts.sh` / `summarize-learning-log.sh` / `validate-agent-os.sh` はいずれのレイアウトにも対応しています。
 
 ## ディレクトリ構成の一覧
 
@@ -138,7 +170,9 @@ agent-os/
     ├── bootstrap-project.sh
     ├── validate-agent-os.sh
     ├── summarize-learning-log.sh
-    └── detect-rule-conflicts.sh
+    ├── detect-rule-conflicts.sh
+    ├── run-agent-evals.sh
+    └── split-learned-rules.sh
 ```
 
 ## 注意: メタプロンプトを Opus / Sonnet / Codex に毎回渡さないこと

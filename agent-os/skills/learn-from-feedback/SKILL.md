@@ -55,12 +55,13 @@ Validation:
 ```
 
 7. Write the rule text as an observable instruction ("run `X` before committing to `migrations/`"), not a feeling or a vague preference.
-8. Report back to the user which log/rule file was updated and at what status, so they can correct the classification if wrong.
+8. If `.agent-os/rules/` exists (this project already uses the split layout — see `split-learned-rules.sh`), write or promote the active rule directly into `.agent-os/rules/<scope>.md` matching the rule's `Scope:` field, and keep the `## Active rules index` in `learned-rules.md` up to date with a pointer to it. Candidate rules always stay in `learned-rules.md`, regardless of layout.
+9. Report back to the user which log/rule file was updated and at what status, so they can correct the classification if wrong.
 
 ## Outputs
 
 - A new entry in `.agent-os/review-feedback-log.md` (always, verbatim).
-- A new or updated rule in `.agent-os/learned-rules.md` (candidate or active) when the feedback yields an actionable rule.
+- A new or updated rule in `.agent-os/learned-rules.md` (candidate or active) when the feedback yields an actionable rule — or, under the split layout, an active rule in `.agent-os/rules/<scope>.md` plus an updated index entry in `learned-rules.md`.
 
 ## Forbidden
 

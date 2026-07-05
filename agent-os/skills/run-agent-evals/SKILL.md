@@ -25,14 +25,16 @@ Choose evals that exercise: a small bug fix, a feature addition, adding tests, a
 
 ## Procedure
 
-1. Pick one or more evals from `.agent-os/evals.md` matching the perspectives above; if a perspective has no eval yet, note the gap for `improve-instructions` rather than skip silently.
-2. Run the task exactly as the eval specifies, using the project's real commands from `command-map.md` — not a simulated shortcut.
-3. Check the result against the eval's pass criteria and forbidden behavior list.
-4. Record the result: date, eval name, model/agent used, pass/fail, and notes on anything surprising.
-5. Answer the eval's **Learning check** questions explicitly: which learned rule should have been used, and did the agent use it; which prior failure should not recur, and did it recur.
-6. On failure: write an entry to `.agent-os/failure-log.md` (command, cause, prevention) and consider whether a new or stronger rule is warranted — hand off to `learn-from-feedback` if so.
-7. On a **repeated** failure of the same eval (or same failure shape across evals): escalate to `improve-instructions` rather than patching the same rule again in isolation.
-8. Summarize overall pass/fail rate and flag any eval perspective that is currently untested.
+1. Use `scripts/run-agent-evals.sh --adapter <dir> --list` to enumerate the evals in `.agent-os/evals.md` and their last recorded result; pick one or more matching the perspectives above. If a perspective has no eval yet, note the gap for `improve-instructions` rather than skip silently.
+2. Run `scripts/run-agent-evals.sh --adapter <dir> --show <eval-name>` to read the full eval block before starting.
+3. Perform the eval's Task yourself, exactly as specified, using the project's real commands from `command-map.md` — not a simulated shortcut. The script does not do this part; it only enumerates, checks, and records.
+4. Run `scripts/run-agent-evals.sh --adapter <dir> --check <eval-name>` to see the Validation command(s). Only add `--exec` to actually run one, and only when it appears verbatim in `.agent-os/command-map.md` — the script refuses to run anything not listed there, and never executes a "Manual review" style command.
+5. Check the result against the eval's pass criteria and forbidden behavior list.
+6. Record the result with `scripts/run-agent-evals.sh --adapter <dir> --record <eval-name> --result pass|fail --model <name> [--notes <text>]`, which appends a row to the eval's Results table.
+7. Answer the eval's **Learning check** questions explicitly: which learned rule should have been used, and did the agent use it; which prior failure should not recur, and did it recur.
+8. On failure: write an entry to `.agent-os/failure-log.md` (command, cause, prevention) and consider whether a new or stronger rule is warranted — hand off to `learn-from-feedback` if so.
+9. On a **repeated** failure of the same eval (or same failure shape across evals): escalate to `improve-instructions` rather than patching the same rule again in isolation.
+10. Summarize overall pass/fail rate and flag any eval perspective that is currently untested.
 
 ## Eval format
 
@@ -76,6 +78,7 @@ Learning check:
 - Skipping the Learning check questions.
 - Simulating or shortcutting the task instead of running the project's real commands.
 - Hiding a failing eval or omitting it from the summary.
+- Running a validation command with `--exec` that is not listed verbatim in `.agent-os/command-map.md`, or forcing execution of a "Manual review" style command — `run-agent-evals.sh` refuses both by design.
 
 ## Done criteria
 

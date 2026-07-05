@@ -18,7 +18,9 @@ not a replacement.
    silently overwriting the older rule.
 4. Apply the promotion rule: a single occurrence stays `Status: candidate`;
    the same lesson observed 2 or more times independently is promoted to
-   `Status: active` in `.agent-os/learned-rules.md`.
+   `Status: active` in `.agent-os/learned-rules.md` — or, if `.agent-os/rules/`
+   already exists (split layout), into `rules/<scope>.md` with the index in
+   `learned-rules.md` updated to match.
 5. Write every rule in the standard Rule format (Status, Source, Scope,
    Applies to, Rule, Rationale, Examples, Validation).
 
