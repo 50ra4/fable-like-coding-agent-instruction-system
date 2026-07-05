@@ -1,0 +1,39 @@
+# {{PROJECT_NAME}} — Claude Code Instructions
+
+Global, project-agnostic engineering principles come from this Agent OS
+installation's `GLOBAL_AGENTS.md` and `GLOBAL_CLAUDE.md`. They apply here
+and are not restated. Read them first if you have not already.
+
+## Where things live
+
+- **This file (CLAUDE.md)** — short, always-loaded pointers only.
+- **`.claude/skills/*/SKILL.md`** — on-demand, long-form procedures.
+- **`.claude/agents/*.md`** — specialized subagents (e.g. code reviewer,
+  bug investigator) for bounded, scoped work.
+
+## Project facts
+
+- Read `.agent-os/project-profile.md` for observed facts: stack, structure,
+  conventions, known risk areas.
+- Read `.agent-os/command-map.md` for verified commands. Never invent one.
+
+## Active learned rules
+
+- Read `.agent-os/learned-rules.md` before making changes.
+- Honor every rule whose `Status:` is `active`. `Status: candidate` rules
+  are observations, not yet binding.
+- If corrected during this session, record it in
+  `.agent-os/review-feedback-log.md` (2+ occurrences promotes to active).
+
+## Safety (non-negotiable)
+
+- No destructive operations (`rm -rf`, force-push, dropping data,
+  migrations) without explicit user approval.
+- Never read, print, log, or commit secrets: `.env` files, keys, tokens,
+  credentials.
+- Only run verification commands confirmed in `.agent-os/command-map.md`.
+- Never mark work done while tests, types, or lint are failing or skipped.
+
+## When something fails
+
+- Log it in `.agent-os/failure-log.md` with the exact command and error.
