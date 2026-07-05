@@ -4,7 +4,9 @@
 # Read-only reporting over a project's .agent-os/failure-log.md and
 # .agent-os/review-feedback-log.md: entry counts, category breakdown,
 # and promotion candidates (recurring failures / duplicate feedback)
-# that should become an active rule in learned-rules.md.
+# that should become an active rule in learned-rules.md. The rule
+# Status counts also cover .agent-os/rules/*.md when the project has
+# split learned-rules.md by scope.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,7 +19,8 @@ Usage: summarize-learning-log.sh --adapter <dir>
 Summarize a project's .agent-os/failure-log.md and
 .agent-os/review-feedback-log.md: total entries, entries grouped by
 category, promotion candidates (2+ occurrences), and the current
-learned-rules.md status counts.
+learned-rules.md status counts (including .agent-os/rules/*.md, when
+present, with a per-file breakdown).
 
 Options:
   --adapter <dir>   Directory containing .agent-os/ (required).
@@ -59,6 +62,7 @@ AO_DIR="$ADAPTER_DIR/.agent-os"
 FAILURE_LOG="$AO_DIR/failure-log.md"
 FEEDBACK_LOG="$AO_DIR/review-feedback-log.md"
 RULES_FILE="$AO_DIR/learned-rules.md"
+RULES_DIR="$AO_DIR/rules"
 
 if [[ ! -d "$AO_DIR" ]]; then
   echo "WARN: .agent-os directory not found: $AO_DIR"
@@ -215,17 +219,52 @@ if [[ "$FOUND_CANDIDATE" -eq 0 ]]; then
 fi
 
 # ---- learned-rules.md status counts ---------------------------------------
+# Covers learned-rules.md plus, when the project has split rules by
+# scope, every .agent-os/rules/*.md file.
 echo
 echo "--- learned-rules.md: rule counts by Status ---"
-if [[ -f "$RULES_FILE" ]]; then
-  CANDIDATE_COUNT="$(grep -cE '^Status:[[:space:]]*candidate[[:space:]]*$' "$RULES_FILE" || true)"
-  ACTIVE_COUNT="$(grep -cE '^Status:[[:space:]]*active[[:space:]]*$' "$RULES_FILE" || true)"
-  DEPRECATED_COUNT="$(grep -cE '^Status:[[:space:]]*deprecated[[:space:]]*$' "$RULES_FILE" || true)"
-  echo "  candidate:  ${CANDIDATE_COUNT:-0}"
-  echo "  active:     ${ACTIVE_COUNT:-0}"
-  echo "  deprecated: ${DEPRECATED_COUNT:-0}"
-else
+declare -a STATUS_FILES=()
+[[ -f "$RULES_FILE" ]] && STATUS_FILES+=("$RULES_FILE")
+if [[ -d "$RULES_DIR" ]]; then
+  while IFS= read -r f; do
+    STATUS_FILES+=("$f")
+  done < <(find "$RULES_DIR" -maxdepth 1 -name '*.md' -type f | sort)
+fi
+
+if [[ "${#STATUS_FILES[@]}" -eq 0 ]]; then
   echo "  (learned-rules.md not found: $RULES_FILE)"
+else
+  count_status() {
+    # $1 = file, $2 = status word; prints a count, always numeric.
+    local n
+    n="$(grep -cE "^Status:[[:space:]]*$2[[:space:]]*\$" "$1" || true)"
+    echo "${n:-0}"
+  }
+
+  TOTAL_CANDIDATE=0
+  TOTAL_ACTIVE=0
+  TOTAL_DEPRECATED=0
+  for f in "${STATUS_FILES[@]}"; do
+    TOTAL_CANDIDATE=$((TOTAL_CANDIDATE + $(count_status "$f" candidate)))
+    TOTAL_ACTIVE=$((TOTAL_ACTIVE + $(count_status "$f" active)))
+    TOTAL_DEPRECATED=$((TOTAL_DEPRECATED + $(count_status "$f" deprecated)))
+  done
+  echo "  candidate:  $TOTAL_CANDIDATE"
+  echo "  active:     $TOTAL_ACTIVE"
+  echo "  deprecated: $TOTAL_DEPRECATED"
+
+  if [[ "${#STATUS_FILES[@]}" -gt 1 ]]; then
+    echo
+    echo "  --- per-file breakdown (split layout detected) ---"
+    for f in "${STATUS_FILES[@]}"; do
+      case "$f" in
+        */rules/*) label="rules/$(basename "$f")" ;;
+        *) label="$(basename "$f")" ;;
+      esac
+      printf '  %-24s candidate: %-3s active: %-3s deprecated: %s\n' \
+        "$label" "$(count_status "$f" candidate)" "$(count_status "$f" active)" "$(count_status "$f" deprecated)"
+    done
+  fi
 fi
 
 echo

@@ -22,7 +22,11 @@ Options:
   --adapter <dir>   Additionally validate <dir>/.agent-os as an installed
                     project adapter (checks the 8 required files and that
                     any Status: lines in learned-rules.md are one of
-                    candidate/active/deprecated).
+                    candidate/active/deprecated). If .agent-os/rules/
+                    exists (the split-by-scope layout), also validates
+                    Status: lines in each rules/*.md and warns on any
+                    file there not named global.md/project.md/
+                    directory.md/file-pattern.md.
   --help            Show this help text and exit.
 
 Exit codes:
@@ -216,8 +220,15 @@ for f in "${ADAPTER_FILES[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/project-adapter/.agent-os/$f.md" "project-adapter/.agent-os/$f.md"
 done
 
-# ---- The 4 scripts ------------------------------------------------------
-SCRIPTS=(bootstrap-project.sh validate-agent-os.sh summarize-learning-log.sh detect-rule-conflicts.sh)
+# ---- The required scripts ------------------------------------------------
+SCRIPTS=(
+  bootstrap-project.sh
+  validate-agent-os.sh
+  summarize-learning-log.sh
+  detect-rule-conflicts.sh
+  run-agent-evals.sh
+  split-learned-rules.sh
+)
 for s in "${SCRIPTS[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/scripts/$s" "scripts/$s"
 done
@@ -256,6 +267,32 @@ if [[ -n "$ADAPTER_DIR" ]]; then
       else
         pass
       fi
+    fi
+
+    # ---- Optional split-by-scope layout: .agent-os/rules/*.md -----------
+    RULES_DIR="$AO/rules"
+    if [[ -d "$RULES_DIR" ]]; then
+      echo "--- validating split rules layout: $RULES_DIR ---"
+      EXPECTED_RULE_FILES=(global.md project.md directory.md file-pattern.md)
+
+      while IFS= read -r rf; do
+        base="$(basename "$rf")"
+        is_expected=0
+        for ef in "${EXPECTED_RULE_FILES[@]}"; do
+          [[ "$base" == "$ef" ]] && is_expected=1
+        done
+        if [[ "$is_expected" -eq 0 ]]; then
+          warn "unexpected file in $RULES_DIR (expected one of: ${EXPECTED_RULE_FILES[*]}): $base"
+        fi
+
+        BAD_STATUS="$(strip_html_comments "$rf" | grep -n '^Status:' | grep -Ev 'Status:[[:space:]]*(candidate|active|deprecated)[[:space:]]*$' || true)"
+        if [[ -n "$BAD_STATUS" ]]; then
+          fail "invalid Status: value(s) in $rf:"
+          echo "$BAD_STATUS"
+        else
+          pass
+        fi
+      done < <(find "$RULES_DIR" -maxdepth 1 -type f -name '*.md' | sort)
     fi
   fi
 fi

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # detect-rule-conflicts.sh
 #
-# Read-only analysis of a project's .agent-os/learned-rules.md: finds
+# Read-only analysis of a project's .agent-os/learned-rules.md (and,
+# when present, the split-by-scope .agent-os/rules/*.md files): finds
 # duplicate rule names, rules that overlap on the same "Applies to"
 # target, a crude opposite-polarity heuristic (do-not/never vs
 # always/must for the same target), and active rules missing required
-# fields.
+# fields. Findings are tagged with the source file each rule came from
+# so cross-file duplicates/overlaps/conflicts are visible.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,12 +18,19 @@ usage() {
 Usage: detect-rule-conflicts.sh --adapter <dir>
        detect-rule-conflicts.sh --file <learned-rules.md>
 
-Detect duplicate/overlapping/conflicting rules in a learned-rules.md
-file. Read-only; makes no changes.
+Detect duplicate/overlapping/conflicting rules across a project's rule
+files. Read-only; makes no changes.
+
+In --adapter mode this covers <dir>/.agent-os/learned-rules.md plus,
+when the project has split rules by scope, every
+<dir>/.agent-os/rules/*.md file -- duplicates/overlaps/conflicts are
+detected across all of them combined, and each finding names the
+source file(s) involved. --file mode analyzes a single given file only.
 
 Options:
-  --adapter <dir>   Directory containing .agent-os/learned-rules.md.
-  --file <path>     Path directly to a learned-rules.md file.
+  --adapter <dir>   Directory containing .agent-os/learned-rules.md
+                    (and, optionally, .agent-os/rules/*.md).
+  --file <path>     Path directly to a single rules file.
   --help            Show this help text and exit.
 
 Findings reported:
@@ -72,22 +81,42 @@ if [[ -z "$ADAPTER_DIR" && -z "$FILE_ARG" ]]; then
   exit 2
 fi
 
+# SOURCE_FILES holds every rules file to analyze, in order. In --file
+# mode that is exactly the one path given (unchanged single-file
+# behavior). In --adapter mode it is learned-rules.md plus, when the
+# project has split rules by scope, every .agent-os/rules/*.md file --
+# all of them are concatenated (comment-stripped) before parsing so
+# duplicates/overlaps/conflicts are caught across files too.
+declare -a SOURCE_FILES=()
+
 if [[ -n "$FILE_ARG" ]]; then
-  RULES_FILE="$FILE_ARG"
+  SOURCE_FILES=("$FILE_ARG")
+  echo "===== detect-rule-conflicts: $FILE_ARG ====="
 else
-  RULES_FILE="$ADAPTER_DIR/.agent-os/learned-rules.md"
+  AO_DIR="$ADAPTER_DIR/.agent-os"
+  LEARNED_RULES="$AO_DIR/learned-rules.md"
+  RULES_DIR="$AO_DIR/rules"
+  echo "===== detect-rule-conflicts: $AO_DIR ====="
+
+  [[ -f "$LEARNED_RULES" ]] && SOURCE_FILES+=("$LEARNED_RULES")
+  if [[ -d "$RULES_DIR" ]]; then
+    while IFS= read -r f; do
+      SOURCE_FILES+=("$f")
+    done < <(find "$RULES_DIR" -maxdepth 1 -name '*.md' -type f | sort)
+  fi
+
+  echo "Sources: ${SOURCE_FILES[*]:-(none found)}"
 fi
 
-echo "===== detect-rule-conflicts: $RULES_FILE ====="
-
-if [[ ! -f "$RULES_FILE" ]]; then
-  echo "WARN: learned-rules.md not found: $RULES_FILE"
+if [[ "${#SOURCE_FILES[@]}" -eq 0 ]]; then
+  echo "WARN: learned-rules.md not found: ${FILE_ARG:-$ADAPTER_DIR/.agent-os/learned-rules.md}"
   echo "RESULT: no findings (nothing to check)"
   exit 0
 fi
 
 # Parse "## Rule:" blocks and emit tagged, tab-separated records:
 #   RULE_START
+#   SOURCE<TAB>source label (which file this rule came from)
 #   NAME<TAB>name
 #   STATUS<TAB>status
 #   SCOPE<TAB>scope
@@ -98,6 +127,7 @@ fi
 #   RULE_END
 parse_rules() {
   local file="$1"
+  local source_label="$2"
   # Strip HTML comment blocks first (templates ship a "## Rule: <short
   # name>" example inside a "<!-- Example (delete me) -->" comment; that
   # is documentation, not a real rule, and must not be parsed as one).
@@ -105,9 +135,10 @@ parse_rules() {
     /<!--/ { in_comment = 1 }
     !in_comment { print }
     /-->/ { in_comment = 0 }
-  ' "$file" | awk '
+  ' "$file" | awk -v source_label="$source_label" '
     function flush_block() {
       print "RULE_START"
+      print "SOURCE\t" source_label
       print "NAME\t" name
       print "STATUS\t" status
       print "SCOPE\t" scope
@@ -177,6 +208,21 @@ parse_rules() {
   '
 }
 
+# Emit parsed records for every source file, tagging each rule with the
+# basename of the file it came from (e.g. "learned-rules.md",
+# "rules/directory.md") so findings can report where each rule lives.
+all_rules() {
+  local f label
+  for f in "${SOURCE_FILES[@]}"; do
+    case "$f" in
+      */rules/*) label="rules/$(basename "$f")" ;;
+      *) label="$(basename "$f")" ;;
+    esac
+    parse_rules "$f" "$label"
+  done
+}
+
+declare -a SOURCES=()
 declare -a NAMES=()
 declare -a STATUSES=()
 declare -a HAS_STATUS=()
@@ -195,6 +241,7 @@ while IFS=$'\t' read -r tag val; do
       idx=$((idx + 1))
       APPLIES_LIST[$idx]=""
       ;;
+    SOURCE) SOURCES[$idx]="$val" ;;
     NAME) NAMES[$idx]="$val" ;;
     STATUS) STATUSES[$idx]="$val" ;;
     HAS_STATUS) HAS_STATUS[$idx]="$val" ;;
@@ -212,7 +259,7 @@ while IFS=$'\t' read -r tag val; do
     POS) POSS[$idx]="$val" ;;
     RULE_END) : ;;
   esac
-done < <(parse_rules "$RULES_FILE")
+done < <(all_rules)
 
 TOTAL_RULES=$((idx + 1))
 
@@ -230,14 +277,20 @@ fi
 echo
 echo "--- Duplicate rule names ---"
 declare -A NAME_COUNT=()
-for n in "${NAMES[@]}"; do
-  lower="$(echo "$n" | tr '[:upper:]' '[:lower:]')"
+declare -A NAME_SOURCES=()
+for i in $(seq 0 $((TOTAL_RULES - 1))); do
+  lower="$(echo "${NAMES[$i]}" | tr '[:upper:]' '[:lower:]')"
   NAME_COUNT["$lower"]=$(( ${NAME_COUNT["$lower"]:-0} + 1 ))
+  if [[ -z "${NAME_SOURCES[$lower]:-}" ]]; then
+    NAME_SOURCES["$lower"]="${SOURCES[$i]:-?}"
+  else
+    NAME_SOURCES["$lower"]="${NAME_SOURCES[$lower]}, ${SOURCES[$i]:-?}"
+  fi
 done
 DUP_NAME_FOUND=0
 for lower in "${!NAME_COUNT[@]}"; do
   if [[ "${NAME_COUNT[$lower]}" -ge 2 ]]; then
-    echo "DUPLICATE RULE NAME: \"$lower\" appears ${NAME_COUNT[$lower]} times"
+    echo "DUPLICATE RULE NAME: \"$lower\" appears ${NAME_COUNT[$lower]} times (in: ${NAME_SOURCES[$lower]})"
     DUP_NAME_FOUND=1
     FINDINGS=$((FINDINGS + 1))
   fi
@@ -273,7 +326,7 @@ for target in "${!TARGET_RULES[@]}"; do
     has_neg=0
     has_pos=0
     for i in $rule_idxs; do
-      names_str="$names_str \"${NAMES[$i]}\""
+      names_str="$names_str \"${NAMES[$i]}\" [${SOURCES[$i]:-?}]"
       [[ "${NEGS[$i]:-0}" -eq 1 ]] && has_neg=1
       [[ "${POSS[$i]:-0}" -eq 1 ]] && has_pos=1
     done
@@ -296,7 +349,7 @@ for target in "${!CONFLICT_TARGETS[@]}"; do
     polarity="neutral"
     [[ "${NEGS[$i]:-0}" -eq 1 ]] && polarity="do-not/never"
     [[ "${POSS[$i]:-0}" -eq 1 ]] && polarity="always/must"
-    names_str="$names_str \"${NAMES[$i]}\"($polarity)"
+    names_str="$names_str \"${NAMES[$i]}\"($polarity) [${SOURCES[$i]:-?}]"
   done
   echo "POSSIBLE CONFLICT -- target \"$target\":$names_str"
   CONFLICT_FOUND=1
@@ -317,7 +370,7 @@ for i in $(seq 0 $((TOTAL_RULES - 1))); do
   [[ "${HAS_RULE[$i]:-0}" -eq 0 ]] && missing="$missing Rule"
   [[ "${HAS_RATIONALE[$i]:-0}" -eq 0 ]] && missing="$missing Rationale"
   if [[ -n "$missing" ]]; then
-    echo "MALFORMED -- rule \"${NAMES[$i]}\" (Status: active) is missing:$missing"
+    echo "MALFORMED -- rule \"${NAMES[$i]}\" [${SOURCES[$i]:-?}] (Status: active) is missing:$missing"
     MALFORMED_FOUND=1
     FINDINGS=$((FINDINGS + 1))
   fi
