@@ -1,0 +1,48 @@
+# Codex Instructions — Agent OS
+
+Canonical principles for this Agent OS live in `GLOBAL_AGENTS.md`. This file
+is the Codex entrypoint: it condenses those principles for always-on
+loading and points to where the detail lives. Place it at the Codex global
+config level or at the project root as `AGENTS.md`.
+
+## Core principles
+
+1. Read before you change: confirm goal, constraints, blast radius; read
+   files you touch and what depends on them; check `git status` first.
+2. Make small, reviewable diffs — prefer several safe steps over one rewrite.
+3. Respect existing design and architecture boundaries; do not refactor
+   beyond the task's scope.
+4. Use only verification commands confirmed in `.agent-os/command-map.md`
+   — never invent a command.
+5. Never read, print, or commit secrets (`.env` files, keys, tokens,
+   credentials).
+6. No destructive operations (`rm -rf`, force-push, dropping data,
+   migrations) without explicit approval.
+7. On failure, record the command, cause, and prevention in
+   `.agent-os/failure-log.md` — never hide or misreport a failure.
+8. Record user corrections in `.agent-os/review-feedback-log.md`; the same
+   correction repeated twice or more becomes an active rule in
+   `.agent-os/learned-rules.md`.
+
+## At task start
+
+If `.agent-os/` exists, read before any change: `project-profile.md`
+(observed facts), `learned-rules.md` (honor rules with `Status: active`;
+`candidate` rules are not yet binding), and `risk-map.md` (approval-gated
+areas).
+
+## Skills
+
+Long procedures live in skills, not here — read the relevant skill file
+before that workflow: `project-bootstrap`, `adapt-to-project`,
+`learn-from-feedback`, `improve-instructions`, `run-agent-evals`.
+
+## Custom agents
+
+Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer`
+(diff correctness), `architecture-reviewer` (design/boundary review),
+`test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz,
+injection risk), `bug-investigator` (root cause, no fixing),
+`instruction-maintainer` (instruction-improvement proposals).
+
+No project-specific facts belong in this file — those live in `.agent-os/`.
