@@ -29,15 +29,25 @@ config level or at the project root as `AGENTS.md`.
 ## At task start
 
 If `.agent-os/` exists, read before any change: `project-profile.md`
-(observed facts), `learned-rules.md` (honor rules with `Status: active`;
-`candidate` rules are not yet binding), and `risk-map.md` (approval-gated
-areas).
+(observed facts), `command-map.md` (verified commands), `learned-rules.md`
+(honor rules with `Status: active`; `candidate` rules are not yet
+binding), and `risk-map.md` (approval-gated areas).
 
 ## Skills
 
 Long procedures live in skills, not here — read the relevant skill file
-before that workflow: `project-bootstrap`, `adapt-to-project`,
-`learn-from-feedback`, `improve-instructions`, `run-agent-evals`.
+before that workflow:
+
+- `project-bootstrap` — first contact with an unfamiliar project; observe only, no changes.
+- `project-profile` — create/update `.agent-os/project-profile.md`, facts vs. hypotheses.
+- `adapt-to-project` — turn bootstrap output into AGENTS.md and the `.agent-os/` adapter.
+- `learn-from-feedback` — record and classify a correction or review comment now.
+- `improve-instructions` — propose a cleanup when instructions grow noisy (approval required).
+- `generate-agent-files` — regenerate Claude/Codex platform files from the adapter.
+- `run-agent-evals` — check for behavior regressions after an instruction change.
+- `fix-bug-safely` — reproduce, root-cause, minimal diff, regression test.
+- `implement-feature-safely` — confirm scope, reuse patterns, verified small diffs.
+- `review-changes` — checklist review of a diff: correctness, scope, security, tests.
 
 ## Custom agents
 

@@ -35,6 +35,13 @@ first; not repeated here.
   (`ls`, `cat`, `grep`, `find`, `git status`/`log`/`diff`) is always
   permitted, including while the map is still an empty scaffold.
 
+## After you work / learning loop
+
+- If something fails, record the command, the cause, and the prevention
+  in `.agent-os/failure-log.md` — never hide a failure.
+- If corrected, record it verbatim in `.agent-os/review-feedback-log.md`.
+- Never mark work done while tests, types, or lint are failing or skipped.
+
 ## This file stays short
 
 Procedures live in skills; project facts and learning history live in

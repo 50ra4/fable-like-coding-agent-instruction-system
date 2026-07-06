@@ -16,7 +16,10 @@ this file is a compact Codex-facing pointer, not a replacement.
    `.agent-os/risk-map.md`; pull only verified facts, never hypotheses.
 3. Write/update a short `AGENTS.md` at the project root pointing to
    `.agent-os/` and to relevant skills for detail — no long procedures
-   inline.
+   inline. Generate it from the `templates/AGENTS.md.template` shape
+   (structure and required sections, not the vendored placeholder
+   questions themselves), under the same length discipline as the
+   global entrypoint.
 4. Create `.agent-os/learned-rules.md` and `.agent-os/evals.md` if absent
    (empty shells, not pre-populated with unverified rules).
 5. Every rule placed in the adapter must trace back to an observed fact

@@ -194,7 +194,7 @@ done
 # ---- Claude assistant wiring ------------------------------------------------
 check_file_exists "$AGENT_OS_ROOT/claude/CLAUDE.md" "claude/CLAUDE.md"
 
-CLAUDE_SKILLS=(project-bootstrap adapt-to-project learn-from-feedback improve-instructions run-agent-evals)
+CLAUDE_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions generate-agent-files run-agent-evals fix-bug-safely implement-feature-safely review-changes)
 for s in "${CLAUDE_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/claude/skills/$s/SKILL.md"
 done
@@ -212,7 +212,7 @@ for a in "${CODEX_AGENTS[@]}"; do
   check_codex_toml "$AGENT_OS_ROOT/codex/agents/$a.toml"
 done
 
-CODEX_SKILLS=(project-bootstrap adapt-to-project learn-from-feedback improve-instructions run-agent-evals)
+CODEX_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions generate-agent-files run-agent-evals fix-bug-safely implement-feature-safely review-changes)
 for s in "${CODEX_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/codex/skills/$s/SKILL.md"
 done

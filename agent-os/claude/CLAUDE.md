@@ -17,16 +17,22 @@ Principles come from the Global Agent OS (`GLOBAL_AGENTS.md`, `GLOBAL_CLAUDE.md`
 
 If `.agent-os/` exists in this project, read before making any change:
 - `.agent-os/project-profile.md` — observed facts about stack, structure, conventions.
+- `.agent-os/command-map.md` — the only commands you may run to verify work.
 - `.agent-os/learned-rules.md` — honor every rule whose `Status:` is `active`; `candidate` rules are observations only.
 - `.agent-os/risk-map.md` — areas that need extra care or explicit approval before touching.
 
 ## Use skills for procedures
 
 - `project-bootstrap` — first contact with an unfamiliar project; observe stack/commands/risk, no code changes.
+- `project-profile` — create/update `.agent-os/project-profile.md`, facts vs. hypotheses kept separate.
 - `adapt-to-project` — turn bootstrap output into this project's CLAUDE.md/AGENTS.md and `.agent-os/` adapter.
 - `learn-from-feedback` — a correction or review comment just happened; record and classify it now.
 - `improve-instructions` — instructions have grown noisy or contradictory; propose a cleanup (approval required).
+- `generate-agent-files` — regenerate the Claude/Codex platform files from the Global OS plus the adapter.
 - `run-agent-evals` — instructions just changed, or it's time to check for behavior regressions.
+- `fix-bug-safely` — any bug report or unexpected behavior needing a code change: reproduce, root-cause, fix, test.
+- `implement-feature-safely` — any new-functionality request: confirm scope, reuse patterns, verified diffs.
+- `review-changes` — before considering a diff done, or when asked to review a PR.
 
 ## Use subagents for specialized judgment
 
