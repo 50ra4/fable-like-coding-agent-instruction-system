@@ -3,7 +3,7 @@ name: adapt-to-project
 description: Generate this project's short CLAUDE.md/AGENTS.md and .agent-os adapter files (learned-rules.md, evals.md) from project-bootstrap's output. Use once bootstrap facts exist and no adapter is wired up yet.
 ---
 
-The canonical procedure lives in `agent-os/skills/adapt-to-project/SKILL.md`. Follow that file's steps in full; if this project vendored a copy of the canonical skills, use the vendored copy instead of this summary. What follows is a standalone-usable condensation.
+The canonical procedure lives in `.agent-os/skills/adapt-to-project/SKILL.md` (inside the Agent OS repository itself, the canonical source is `agent-os/skills/adapt-to-project/SKILL.md`). Follow that file's steps in full instead of this summary. What follows is a standalone-usable condensation.
 
 ## Procedure summary
 

@@ -3,7 +3,7 @@ name: project-bootstrap
 description: First contact with a new project — observe and record facts about stack, commands, structure, and risk areas without changing anything. Use when there is no `.agent-os/` yet, or it looks stale, or the user asks for a fresh scan.
 ---
 
-The canonical procedure lives in `agent-os/skills/project-bootstrap/SKILL.md`. Follow that file's steps in full; if this project vendored a copy of the canonical skills, use the vendored copy instead of this summary. What follows is a standalone-usable condensation.
+The canonical procedure lives in `.agent-os/skills/project-bootstrap/SKILL.md` (inside the Agent OS repository itself, the canonical source is `agent-os/skills/project-bootstrap/SKILL.md`). Follow that file's steps in full instead of this summary. What follows is a standalone-usable condensation.
 
 ## Procedure summary
 

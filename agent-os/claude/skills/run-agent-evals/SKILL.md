@@ -3,7 +3,7 @@ name: run-agent-evals
 description: Run the project's recorded eval scenarios from .agent-os/evals.md to check whether current instructions still produce correct, safe behavior. Use after any change to CLAUDE.md, skills, or learned-rules.md, and periodically to catch regressions.
 ---
 
-The canonical procedure lives in `agent-os/skills/run-agent-evals/SKILL.md`. Follow that file's steps in full; if this project vendored a copy of the canonical skills, use the vendored copy instead of this summary. What follows is a standalone-usable condensation.
+The canonical procedure lives in `.agent-os/skills/run-agent-evals/SKILL.md` (inside the Agent OS repository itself, the canonical source is `agent-os/skills/run-agent-evals/SKILL.md`). Follow that file's steps in full instead of this summary. What follows is a standalone-usable condensation.
 
 ## Procedure summary
 

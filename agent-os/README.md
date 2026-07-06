@@ -61,6 +61,18 @@ bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for claud
 bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for codex
 ```
 
+`bootstrap-project.sh` はこのとき Global Layer の `GLOBAL_AGENTS.md`（`--for` を問わず常に）と `GLOBAL_CLAUDE.md`（`--for claude` / `both` のとき）も `<TARGET>/.agent-os/` 配下にベンダリング（コピー）し、生成された `CLAUDE.md`/`AGENTS.md` やスキルはそのベンダリング済みパスを参照します。
+
+## `--force` と `--reset-adapter`
+
+`--force` は skills・agents・ベンダリング済み `.agent-os/skills/`・`GLOBAL_*.md` など Agent OS 自身が管理する（OS-owned）ファイルだけを上書きします。**`project-profile.md` / `learned-rules.md` / `failure-log.md` / `review-feedback-log.md` / `evals.md` / `command-map.md` / `architecture-map.md` / `risk-map.md` の8ファイルと、ルートの `CLAUDE.md` / `AGENTS.md` は、たとえ `--force` を指定しても絶対に上書きされません**（学習によって蓄積された、そのプロジェクト固有の状態のため）。既存のファイルがある場合は `PROTECTED:` 行が表示され、そのまま保持されます。
+
+これらの学習状態を明示的にリセットしたい場合は `--reset-adapter` を使います。既存の保護対象ファイルを `.agent-os/backup-<タイムスタンプ>/` に自動でバックアップしたうえで、新しい雛形を再インストールします。
+
+```bash
+bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for both --reset-adapter
+```
+
 ## 新規プロジェクトでの bootstrap 手順
 
 新しいプロジェクトに Agent OS を導入したら、コードを変更する前に必ず次の順序で実行します。

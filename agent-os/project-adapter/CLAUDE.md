@@ -7,8 +7,9 @@ if it ever drifts or grows.
 
 # {{PROJECT_NAME}} — Claude Code Instructions
 
-Global, project-agnostic principles live in this Agent OS installation's
-`GLOBAL_AGENTS.md` / `GLOBAL_CLAUDE.md`. Read them first; not repeated here.
+Global, project-agnostic principles live in `.agent-os/GLOBAL_AGENTS.md` /
+`.agent-os/GLOBAL_CLAUDE.md`, installed alongside this project. Read them
+first; not repeated here.
 
 ## Where things live
 

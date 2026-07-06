@@ -3,9 +3,10 @@ name: adapt-to-project
 description: Turn project-bootstrap output into the project's adapter — AGENTS.md and .agent-os/ files — without ever editing the Global Agent OS.
 ---
 
-Canonical procedure: `agent-os/skills/adapt-to-project/SKILL.md`. Read it
-before running this workflow — this file is a compact Codex-facing pointer,
-not a replacement.
+Canonical procedure: `.agent-os/skills/adapt-to-project/SKILL.md` (inside the
+Agent OS repository itself, the canonical source is
+`agent-os/skills/adapt-to-project/SKILL.md`). Read it before running this workflow —
+this file is a compact Codex-facing pointer, not a replacement.
 
 ## Summary
 

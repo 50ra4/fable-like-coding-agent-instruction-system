@@ -3,9 +3,10 @@ name: project-bootstrap
 description: First contact with a new project — observe and record facts about stack, commands, structure, and risk areas without changing anything.
 ---
 
-Canonical procedure: `agent-os/skills/project-bootstrap/SKILL.md`. Read it
-before running this workflow — this file is a compact Codex-facing pointer,
-not a replacement.
+Canonical procedure: `.agent-os/skills/project-bootstrap/SKILL.md` (inside the
+Agent OS repository itself, the canonical source is
+`agent-os/skills/project-bootstrap/SKILL.md`). Read it before running this workflow —
+this file is a compact Codex-facing pointer, not a replacement.
 
 ## Summary
 

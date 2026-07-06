@@ -3,9 +3,10 @@ name: run-agent-evals
 description: Run the project's recorded agent evaluation scenarios and check for precision regressions after an instruction change.
 ---
 
-Canonical procedure: `agent-os/skills/run-agent-evals/SKILL.md`. Read it
-before running this workflow — this file is a compact Codex-facing pointer,
-not a replacement.
+Canonical procedure: `.agent-os/skills/run-agent-evals/SKILL.md` (inside the
+Agent OS repository itself, the canonical source is
+`agent-os/skills/run-agent-evals/SKILL.md`). Read it before running this workflow —
+this file is a compact Codex-facing pointer, not a replacement.
 
 ## Summary
 

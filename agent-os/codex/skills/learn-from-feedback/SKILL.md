@@ -3,9 +3,10 @@ name: learn-from-feedback
 description: Record and classify user corrections and review comments so repeated lessons become active rules instead of being relearned every session.
 ---
 
-Canonical procedure: `agent-os/skills/learn-from-feedback/SKILL.md`. Read it
-before running this workflow — this file is a compact Codex-facing pointer,
-not a replacement.
+Canonical procedure: `.agent-os/skills/learn-from-feedback/SKILL.md` (inside the
+Agent OS repository itself, the canonical source is
+`agent-os/skills/learn-from-feedback/SKILL.md`). Read it before running this workflow —
+this file is a compact Codex-facing pointer, not a replacement.
 
 ## Summary
 

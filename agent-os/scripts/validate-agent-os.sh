@@ -20,8 +20,9 @@ frontmatter, codex agent TOML keys, and line-count guards).
 
 Options:
   --adapter <dir>   Additionally validate <dir>/.agent-os as an installed
-                    project adapter (checks the 8 required files and that
-                    any Status: lines in learned-rules.md are one of
+                    project adapter (checks the 8 required files, that
+                    GLOBAL_AGENTS.md was vendored, and that any Status:
+                    lines in learned-rules.md are one of
                     candidate/active/deprecated). If .agent-os/rules/
                     exists (the split-by-scope layout), also validates
                     Status: lines in each rules/*.md and warns on any
@@ -257,6 +258,11 @@ if [[ -n "$ADAPTER_DIR" ]]; then
     for f in "${ADAPTER_FILES[@]}"; do
       check_file_exists "$AO/$f.md" "$ADAPTER_DIR/.agent-os/$f.md"
     done
+
+    # bootstrap-project.sh always vendors GLOBAL_AGENTS.md into every
+    # installed adapter (GLOBAL_CLAUDE.md is only vendored for --for
+    # claude|both installs, so it is not required here).
+    check_file_exists "$AO/GLOBAL_AGENTS.md" "$ADAPTER_DIR/.agent-os/GLOBAL_AGENTS.md"
 
     RULES_FILE="$AO/learned-rules.md"
     if [[ -f "$RULES_FILE" ]]; then

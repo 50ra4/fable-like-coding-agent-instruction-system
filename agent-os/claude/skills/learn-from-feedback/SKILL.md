@@ -3,7 +3,7 @@ name: learn-from-feedback
 description: Record a user correction or review comment verbatim, classify it, and promote it to an active rule after repeated occurrences. Use immediately whenever the user corrects you or leaves review feedback — do not defer it to end of session.
 ---
 
-The canonical procedure lives in `agent-os/skills/learn-from-feedback/SKILL.md`. Follow that file's steps in full; if this project vendored a copy of the canonical skills, use the vendored copy instead of this summary. What follows is a standalone-usable condensation.
+The canonical procedure lives in `.agent-os/skills/learn-from-feedback/SKILL.md` (inside the Agent OS repository itself, the canonical source is `agent-os/skills/learn-from-feedback/SKILL.md`). Follow that file's steps in full instead of this summary. What follows is a standalone-usable condensation.
 
 ## Procedure summary
 

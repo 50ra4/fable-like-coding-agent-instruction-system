@@ -3,9 +3,10 @@ name: improve-instructions
 description: Clean up accumulated instruction files — merge duplicate rules, resolve conflicts, deprecate stale rules, and move long procedures out of always-loaded files.
 ---
 
-Canonical procedure: `agent-os/skills/improve-instructions/SKILL.md`. Read
-it before running this workflow — this file is a compact Codex-facing
-pointer, not a replacement.
+Canonical procedure: `.agent-os/skills/improve-instructions/SKILL.md` (inside the
+Agent OS repository itself, the canonical source is
+`agent-os/skills/improve-instructions/SKILL.md`). Read it before running this workflow —
+this file is a compact Codex-facing pointer, not a replacement.
 
 ## Summary
 

@@ -7,8 +7,8 @@ ever drifts or grows.
 
 # {{PROJECT_NAME}} — Agent Instructions
 
-Global, project-agnostic principles live in this Agent OS installation's
-`GLOBAL_AGENTS.md`. Read them first; they are not repeated here.
+Global, project-agnostic principles live in `.agent-os/GLOBAL_AGENTS.md`,
+installed alongside this project. Read it first; not repeated here.
 
 ## At the start of every task, read
 
