@@ -29,6 +29,9 @@ this file is a compact Codex-facing pointer, not a replacement.
 - This workflow is observation-only. Read files and run only read-only
   shell commands (`ls`, `cat`, `grep`, and equivalents) to inspect the
   repository — never edit, build, install, or run tests during bootstrap.
+  This is permitted even though `.agent-os/command-map.md` is still an
+  empty scaffold — AGENTS.md's command-map rule covers build/test/
+  state-changing commands only, not read-only inspection.
 - Never read `.env` files, key material, or other secrets, even to
   "understand config."
 

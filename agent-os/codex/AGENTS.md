@@ -12,8 +12,10 @@ config level or at the project root as `AGENTS.md`.
 2. Make small, reviewable diffs — prefer several safe steps over one rewrite.
 3. Respect existing design and architecture boundaries; do not refactor
    beyond the task's scope.
-4. Use only verification commands confirmed in `.agent-os/command-map.md`
-   — never invent a command.
+4. Use only build/test/state-changing commands confirmed in
+   `.agent-os/command-map.md` — never invent one. Read-only inspection
+   (`ls`, `cat`, `grep`, `find`, `git status`/`log`/`diff`) is always
+   permitted, even while the map is still empty.
 5. Never read, print, or commit secrets (`.env` files, keys, tokens,
    credentials).
 6. No destructive operations (`rm -rf`, force-push, dropping data,

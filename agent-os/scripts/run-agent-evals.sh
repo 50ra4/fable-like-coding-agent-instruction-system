@@ -28,6 +28,9 @@ Modes (exactly one required):
                           Add --exec to actually run them, gated by
                           .agent-os/command-map.md (a command is only run
                           if it appears verbatim in the command map).
+                          Executed commands run with the adapter root
+                          (--adapter <dir>, resolved to an absolute path)
+                          as their working directory, not the caller's cwd.
   --record <name>        Append a result row to the "## Results" table.
                           Requires --result pass|fail and --model <name>;
                           --notes <text> is optional.
@@ -158,6 +161,13 @@ if [[ ! -f "$EVALS_FILE" ]]; then
   echo "ERROR: evals.md not found: $EVALS_FILE" >&2
   exit 2
 fi
+
+# Absolute adapter root. evals.md was just confirmed to exist under
+# "$ADAPTER_DIR/.agent-os", so ADAPTER_DIR itself is known to exist here.
+# Validation commands (--check --exec) are run from this directory, not
+# the caller's cwd, since they are documented as project-relative (e.g.
+# `npm test` run against the adapter's own workspace).
+ADAPTER_DIR_ABS="$(cd "$ADAPTER_DIR" && pwd)"
 
 # ---- Shared helpers ---------------------------------------------------
 
@@ -433,8 +443,8 @@ run_check() {
       continue
     fi
 
-    echo "RUN: $c"
-    if bash -c "$c"; then
+    echo "RUN (in $ADAPTER_DIR_ABS): $c"
+    if (cd "$ADAPTER_DIR_ABS" && bash -c "$c"); then
       echo "PASS: $c"
     else
       local rc=$?

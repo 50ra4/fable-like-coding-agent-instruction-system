@@ -10,6 +10,12 @@ Rule: only commands verified to exist may be recorded. Each entry must
 cite its evidence (package.json script, Makefile target, CI config, docs).
 Agents must not run commands that are not in this map without verifying
 them first.
+
+Scope: this map is the allow-list for build/test/lint/typecheck/run and
+any other state-changing command. Read-only inspection (`ls`, `cat`,
+`grep`, `find`, `git status`/`log`/`diff`) is out of its scope and is
+always permitted, including before this map has any verified entries —
+it is what the project-bootstrap skill uses to populate the map.
 -->
 
 # Command Map: {{PROJECT_NAME}}

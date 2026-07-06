@@ -23,7 +23,10 @@ installed alongside this project. Read it first; not repeated here.
 - No destructive operations (`rm -rf`, force-push, dropping data, migrations)
   without explicit user approval.
 - Never read, print, or commit secrets (`.env`, keys, tokens, credentials).
-- Only run commands listed in `.agent-os/command-map.md`. Never invent one.
+- Build, test, and any state-changing commands: run only what is listed
+  in `.agent-os/command-map.md` — never invent one. Read-only inspection
+  (`ls`, `cat`, `grep`, `find`, `git status`/`log`/`diff`) is always
+  permitted, including while the map is still an empty scaffold.
 
 ## This file stays short
 

@@ -7,7 +7,7 @@ Principles come from the Global Agent OS (`GLOBAL_AGENTS.md`, `GLOBAL_CLAUDE.md`
 - Read before you change: the target files, their callers, and any existing pattern already in use.
 - Make small, reviewable diffs. Prefer several safe steps over one large rewrite.
 - Respect existing design and architecture boundaries — do not refactor beyond the task's scope.
-- Use only verification commands confirmed in `.agent-os/command-map.md`. Never invent one.
+- Use only build/test/state-changing commands confirmed in `.agent-os/command-map.md`. Never invent one. Read-only inspection (`ls`, `cat`, `grep`, `find`, `git status`/`log`/`diff`) is always permitted, even while the map is still empty.
 - Never read, print, or commit secrets: `.env` files, keys, tokens, credentials.
 - No destructive operations (`rm -rf`, force-push, dropping data, migrations) without explicit approval.
 - If something fails, record the command, cause, and prevention in `.agent-os/failure-log.md` — never hide a failure.

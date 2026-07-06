@@ -9,7 +9,10 @@ Read them first if you have not already.
 - Read `.agent-os/project-profile.md` for observed facts about this project:
   stack, structure, conventions, and known risk areas.
 - Read `.agent-os/command-map.md` for the verified build/test/lint/typecheck
-  commands. Never invent a command that is not listed there.
+  commands — the allow-list for build/test/state-changing commands. Never
+  invent one not listed there. Read-only inspection (`ls`, `cat`, `grep`,
+  `find`, `git status`/`log`/`diff`) is out of the map's scope and always
+  permitted.
 
 ## Active learned rules
 
@@ -26,8 +29,11 @@ Read them first if you have not already.
   migrations) without explicit user approval.
 - Never read, print, log, or commit secrets: `.env` files, keys, tokens,
   credentials.
-- Only run verification commands confirmed in `.agent-os/command-map.md`.
-  Do not guess a command and call it "verified."
+- Build, test, and any state-changing commands: run only what is
+  confirmed in `.agent-os/command-map.md` — do not guess one and call it
+  "verified." Read-only inspection (`ls`, `cat`, `grep`, `find`, `git
+  status`/`log`/`diff`) is always permitted, including while the map is
+  still empty.
 - Never mark work done while tests, types, or lint are failing or skipped.
 
 ## When something fails

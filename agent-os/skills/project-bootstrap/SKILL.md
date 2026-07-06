@@ -42,6 +42,12 @@ Do not use this skill to make changes. It produces observations only; `adapt-to-
 - `.agent-os/risk-map.md`
 - A short summary to the user: stack, verified commands, top risk areas, open hypotheses.
 
+Read-only inspection commands (`ls`, `cat`, `grep`, `find`, `git status`/
+`log`/`diff`, and equivalents) are always permitted while carrying out
+this procedure, even though `.agent-os/command-map.md` is still an empty
+scaffold at this point — the always-loaded command-map rule governs
+build/test/state-changing commands, not read-only inspection.
+
 ## Forbidden
 
 - Modifying any source, config, or test file during analysis.

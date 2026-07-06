@@ -89,7 +89,7 @@ bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for both 
 
 新しいプロジェクトに Agent OS を導入したら、コードを変更する前に必ず次の順序で実行します。
 
-1. **`project-bootstrap` スキルを最初に実行する。** このスキルは観測専用（observe only）であり、コードは一切変更しません。リポジトリを読み取り、`.agent-os/project-profile.md`（プロジェクトの概要）、`command-map.md`（検証済みのビルド/テスト/lint コマンド）、`risk-map.md`（触ってはいけない領域や壊れやすい箇所）を生成します。
+1. **`project-bootstrap` スキルを最初に実行する。** このスキルは観測専用（observe only）であり、コードは一切変更しません。リポジトリを読み取り、`.agent-os/project-profile.md`（プロジェクトの概要）、`command-map.md`（検証済みのビルド/テスト/lint コマンド）、`risk-map.md`（触ってはいけない領域や壊れやすい箇所）を生成します。この段階では `command-map.md` はまだ空の雛形ですが、`ls`・`cat`・`grep`・`find`・`git status`/`log`/`diff` のような読み取り専用の調査コマンドは常に実行してよいものです（`command-map.md` はビルド/テストなど状態を変更するコマンドのみを対象とする allow-list であり、読み取り専用の調査はその対象外です）。
 2. 上記のアダプタファイルが揃ったら、`adapt-to-project` スキルを実行し、Global Layer の原則をそのプロジェクトの実情に合わせて具体化・接続します。
 
 ## フィードバックを学習させる方法
@@ -123,8 +123,9 @@ bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --show <eval-name>
 # 3. （ここでエージェントが Task を実際に実行する）
 
 # 4. Validation command を確認する（--exec は command-map.md に
-#    記載されたコマンドのみ実行し、それ以外は拒否する。"Manual review"
-#    は常に手動確認）
+#    記載されたコマンドのみ、--adapter で指定したディレクトリを
+#    カレントディレクトリとして実行し、それ以外は拒否する。
+#    "Manual review" は常に手動確認）
 bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --check <eval-name> [--exec]
 
 # 5. 結果を Results テーブルに記録する

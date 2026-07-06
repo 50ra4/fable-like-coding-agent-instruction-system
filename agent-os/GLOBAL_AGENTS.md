@@ -15,7 +15,7 @@ This file is intentionally short. Detailed procedures live in `skills/`. Project
 
 - Make small, reviewable diffs. Prefer several safe steps over one large rewrite.
 - Respect the existing design and architecture boundaries. Do not refactor beyond the task's scope.
-- Use only verification commands that are confirmed to exist (see the project's `command-map.md`). Never invent commands.
+- Use only build/test/verification/state-changing commands that are confirmed to exist (see the project's `command-map.md`). Never invent one. Read-only inspection (`ls`, `cat`, `grep`, `find`, `git status`/`log`/`diff`) is always permitted, even before `command-map.md` has any entries — it is how a project first gets populated.
 - Adding a dependency requires an explicit, stated reason.
 - Distinguish facts from guesses. Never record a guess as "confirmed".
 

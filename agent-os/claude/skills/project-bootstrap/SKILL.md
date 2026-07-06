@@ -26,5 +26,5 @@ The canonical procedure lives in `.agent-os/skills/project-bootstrap/SKILL.md` (
 
 ## Claude-specific notes
 
-- Use read-only tools only (`Read`, `Grep`, `Glob`, `Bash` for read-only inspection like `git status`, `cat`, listing). Do not use `Edit` on anything outside `.agent-os/`.
+- Use read-only tools only (`Read`, `Grep`, `Glob`, `Bash` for read-only inspection like `git status`, `cat`, listing). Do not use `Edit` on anything outside `.agent-os/`. This is permitted even though `.agent-os/command-map.md` is still an empty scaffold — CLAUDE.md's command-map rule covers build/test/state-changing commands only, not read-only inspection.
 - End with a short summary to the user: stack, verified commands, top risk areas, open hypotheses — do not silently finish.
