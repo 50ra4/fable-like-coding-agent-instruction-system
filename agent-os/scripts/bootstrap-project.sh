@@ -198,6 +198,14 @@ BLOCKED_LIST=()
 BACKUP_DIR=""
 LAST_ACTION=""
 
+# Set by ensure_reset_backup_dir() to the final backup directory path it
+# created for the current --reset-adapter run (see below; may be a
+# suffixed variant of the timestamped name it was first called with).
+# Reset to "" at the top of reset_adapter() so a stale value from an
+# earlier run (relevant only if reset_adapter() were ever invoked more
+# than once in a single script execution) can't leak into a new one.
+RESET_BACKUP_DIR_FINAL=""
+
 warn() { echo "WARN: $*"; }
 info() { echo "INFO: $*"; }
 
@@ -418,18 +426,74 @@ vendor_canonical_skills() {
   copy_dir_contents "$AGENT_OS_ROOT/skills" "$vendor_dir"
 }
 
-# Ensure the --reset-adapter backup directory exists and is safe to move
-# into, creating it (via safe_mkdir_within_target(), the same
-# component-walking guard copy_file() uses) the first time this is
-# called. Exits 1 immediately -- before any mv -- on any symlink or
-# containment violation, so a violation here leaves nothing moved.
+# Ensure the --reset-adapter backup directory for the current run is a
+# freshly-created directory that is safe to move into, and never a
+# pre-existing one.
+#
+# Called with a candidate base path (the timestamped
+# .agent-os/backup-<ts> name); on the first call this run, resolves a
+# final path and creates it via safe_mkdir_within_target() (the same
+# component-walking + containment guard copy_file() uses), then remembers
+# it in RESET_BACKUP_DIR_FINAL. Subsequent calls in the same run
+# (ensure_reset_backup_dir() is called once per protected file) are a
+# no-op: they see RESET_BACKUP_DIR_FINAL already set and return
+# immediately without re-deriving anything, so the same directory is
+# reused for every file backed up in this run. Callers must read back
+# RESET_BACKUP_DIR_FINAL after calling this (the candidate they passed in
+# may not be the final path -- see below) and use that for every mv and
+# for the final BACKUP_DIR summary value.
+#
+# Two things the candidate path must never be treated as safe to use:
+#
+#   1. A symlink. Checked FIRST, with -L, before any -d/-e test that
+#      would dereference it -- a symlink here (e.g. planted by an
+#      attacker at the exact timestamped name this run will compute) is
+#      hostile: following it would let `mv` relocate protected files
+#      outside the target. This is a hard error, not worked around by
+#      trying another name; the same -L-first check applies to every
+#      suffixed candidate below, so a symlink at any of them also aborts
+#      immediately.
+#   2. An existing regular directory or file (e.g. a leftover backup from
+#      an earlier run, or one created by a run in the same second). Never
+#      reused and never moved into -- `mv`-ing into it could silently
+#      overwrite same-named files already there. Instead, -2, -3, ... is
+#      appended to the base name until an unused, non-symlink name is
+#      found, and an INFO line notes the adjustment.
+#
+# Exits 1 immediately -- before any mv -- on any symlink or containment
+# violation, so a violation here leaves nothing moved.
 ensure_reset_backup_dir() {
-  local backup_dir="$1"
-  [[ -d "$backup_dir" ]] && return 0
-  if ! safe_mkdir_within_target "$backup_dir"; then
-    echo "ERROR: refusing --reset-adapter: could not safely create backup directory $backup_dir (blocked at: $SAFE_MKDIR_FAIL_PATH); nothing moved" >&2
+  local base="$1"
+
+  # Already resolved and created earlier in this run: reuse it, nothing
+  # left to do.
+  [[ -n "$RESET_BACKUP_DIR_FINAL" ]] && return 0
+
+  local candidate="$base"
+  local suffix=1
+  while :; do
+    if [[ -L "$candidate" ]]; then
+      echo "ERROR: refusing --reset-adapter: $candidate is a symlink; refusing to use a symlinked path (or work around it by picking another name) as the backup directory; nothing moved" >&2
+      exit 1
+    fi
+    if [[ -e "$candidate" ]]; then
+      suffix=$((suffix + 1))
+      candidate="${base}-${suffix}"
+      continue
+    fi
+    break
+  done
+
+  if [[ "$candidate" != "$base" ]]; then
+    info "reset-adapter: backup directory $base already exists, using $candidate instead"
+  fi
+
+  if ! safe_mkdir_within_target "$candidate"; then
+    echo "ERROR: refusing --reset-adapter: could not safely create backup directory $candidate (blocked at: $SAFE_MKDIR_FAIL_PATH); nothing moved" >&2
     exit 1
   fi
+
+  RESET_BACKUP_DIR_FINAL="$candidate"
 }
 
 # ---- --reset-adapter: back up existing protected files, then let the ----
@@ -441,6 +505,10 @@ reset_adapter() {
   local backup_dir="$ao_dir/backup-$ts"
   local any=0
   local f src was_symlink note
+
+  # Fresh state for this run: see ensure_reset_backup_dir()'s comment for
+  # why this must start empty each time reset_adapter() runs.
+  RESET_BACKUP_DIR_FINAL=""
 
   # Defense layer 2 (beneath the startup gate above, which already
   # refuses if .agent-os itself is a symlink before reset_adapter() is
@@ -476,6 +544,7 @@ reset_adapter() {
       was_symlink=0
       [[ -L "$src" ]] && was_symlink=1
       ensure_reset_backup_dir "$backup_dir"
+      backup_dir="$RESET_BACKUP_DIR_FINAL"
       mv "$src" "$backup_dir/$f.md"
       any=1
       BACKED_UP_COUNT=$((BACKED_UP_COUNT + 1))
@@ -491,6 +560,7 @@ reset_adapter() {
       was_symlink=0
       [[ -L "$src" ]] && was_symlink=1
       ensure_reset_backup_dir "$backup_dir"
+      backup_dir="$RESET_BACKUP_DIR_FINAL"
       mv "$src" "$backup_dir/$f"
       any=1
       BACKED_UP_COUNT=$((BACKED_UP_COUNT + 1))
