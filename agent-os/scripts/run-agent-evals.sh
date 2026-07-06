@@ -192,9 +192,13 @@ command_map_candidates() {
 strip_html_comments() {
   # Remove HTML comment blocks (<!-- ... -->, possibly multi-line) before
   # parsing, so the commented-out "Example (delete me)" eval in the
-  # template is never treated as a real eval.
+  # template is never treated as a real eval. Also strips a trailing \r
+  # from every line first, so a CRLF-converted evals.md still parses
+  # correctly (exact-match comparisons like heading names would
+  # otherwise silently carry a trailing \r and never match).
   local file="$1"
   awk '
+    { sub(/\r$/, "") }
     /<!--/ { in_comment = 1 }
     !in_comment { print }
     /-->/ { in_comment = 0 }
@@ -220,6 +224,28 @@ die_unknown_eval() {
   echo "Available evals:" >&2
   list_eval_names | sed 's/^/  - /' >&2
   exit 2
+}
+
+# Count how many "## Eval: <name>" headings share the given exact name.
+count_eval_name() {
+  local target="$1"
+  list_eval_names | grep -cxF "$target" || true
+}
+
+# Fail loudly if the eval name is ambiguous (two or more "## Eval:"
+# headings share it). get_eval_block re-enters capture on every matching
+# heading, so a duplicate name would otherwise silently concatenate both
+# blocks together for --show/--check, and --exec would run both blocks'
+# validation commands. Align in spirit with detect-rule-conflicts.sh's
+# "DUPLICATE RULE NAME" finding: name the duplicate and refuse.
+require_unique_eval() {
+  local target="$1"
+  local count
+  count="$(count_eval_name "$target")"
+  if [[ "$count" -gt 1 ]]; then
+    echo "ERROR: duplicate eval name \"$target\" -- $count \"## Eval:\" blocks in $EVALS_FILE share this exact name; rename one of them before using --show/--check/--record on it" >&2
+    exit 1
+  fi
 }
 
 # Print the full "## Eval: <name>" block verbatim (up to but excluding the
@@ -304,19 +330,31 @@ run_list() {
     echo "Total evals: 0"
     exit 0
   fi
-  local n block task latest date result model
+  # Count occurrences of each name up front: a name shared by 2+ "## Eval:"
+  # headings is ambiguous for --show/--check/--record (see
+  # require_unique_eval), so flag it here rather than silently showing
+  # merged/wrong per-block details.
+  declare -A name_count=()
+  local n
+  for n in "${names[@]}"; do
+    name_count["$n"]=$(( ${name_count["$n"]:-0} + 1 ))
+  done
+
+  local block task latest date result model dup_note
   for n in "${names[@]}"; do
     block="$(get_eval_block "$n")"
     task="$(echo "$block" | get_task_first_bullet)"
     [[ -z "$task" ]] && task="(no Task bullet found)"
     latest="$(get_latest_result "$n")"
+    dup_note=""
+    [[ "${name_count[$n]}" -gt 1 ]] && dup_note=" [DUPLICATE NAME]"
     if [[ -z "$latest" ]]; then
-      echo "- $n"
+      echo "- $n$dup_note"
       echo "    Task: $task"
       echo "    Last result: never run"
     else
       IFS=$'\t' read -r date result model <<<"$latest"
-      echo "- $n"
+      echo "- $n$dup_note"
       echo "    Task: $task"
       echo "    Last result: $result ($date, $model)"
     fi
@@ -330,6 +368,7 @@ run_list() {
 run_show() {
   local target="$1"
   eval_exists "$target" || die_unknown_eval "$target"
+  require_unique_eval "$target"
   get_eval_block "$target"
   exit 0
 }
@@ -338,6 +377,7 @@ run_show() {
 run_check() {
   local target="$1"
   eval_exists "$target" || die_unknown_eval "$target"
+  require_unique_eval "$target"
 
   local block
   block="$(get_eval_block "$target")"
@@ -412,6 +452,7 @@ run_check() {
 run_record() {
   local target="$1"
   eval_exists "$target" || die_unknown_eval "$target"
+  require_unique_eval "$target"
 
   # Symlink safety: --record rewrites evals.md in place (via a temp file
   # + mv). Refuse outright if evals.md is a symlink rather than writing
@@ -446,7 +487,11 @@ run_record() {
   tmp_file="$(mktemp "${EVALS_FILE}.XXXXXX")"
 
   awk -v newrow="$new_row" '
-    { lines[NR] = $0 }
+    # Strip a trailing \r so a CRLF-converted evals.md still matches the
+    # exact-line comparisons below ("## Results" heading, the "|---|"
+    # separator row anchored at end-of-line); the rewritten file is
+    # written back out without it.
+    { line = $0; sub(/\r$/, "", line); lines[NR] = line }
     END {
       n = NR
       results_line = 0

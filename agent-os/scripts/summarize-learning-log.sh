@@ -81,17 +81,26 @@ fi
 # \037) is not whitespace, so empty fields are preserved correctly.
 FS_SEP=$'\x1f'
 
-extract_entries() {
+# Strip HTML comment blocks (templates ship "Example (delete me)" entries
+# and rule blocks inside <!-- --> comments; those are documentation, not
+# real data, and must not be counted). Also strips a trailing \r from
+# every line first, so a CRLF-converted file still parses correctly
+# (the trailing-whitespace trims below use [ \t], not [:space:], so they
+# would otherwise leave a \r attached).
+strip_html_comments() {
   local file="$1"
-  [[ -f "$file" ]] || return 0
-  # Strip HTML comment blocks first (templates ship "Example (delete me)"
-  # entries inside <!-- --> comments; those are documentation, not real
-  # log entries, and must not be counted).
   awk '
+    { sub(/\r$/, "") }
     /<!--/ { in_comment = 1 }
     !in_comment { print }
     /-->/ { in_comment = 0 }
-  ' "$file" | awk -v FS_SEP="$FS_SEP" '
+  ' "$file"
+}
+
+extract_entries() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  strip_html_comments "$file" | awk -v FS_SEP="$FS_SEP" '
     /^## / {
       if (heading != "") print heading FS_SEP category FS_SEP recurrence
       heading = $0
@@ -236,8 +245,11 @@ if [[ "${#STATUS_FILES[@]}" -eq 0 ]]; then
 else
   count_status() {
     # $1 = file, $2 = status word; prints a count, always numeric.
+    # Comment-stripped first, so a commented-out example rule (e.g.
+    # "Status: active" inside a template's "<!-- Example (delete me) -->"
+    # block) is never counted as a real rule.
     local n
-    n="$(grep -cE "^Status:[[:space:]]*$2[[:space:]]*\$" "$1" || true)"
+    n="$(strip_html_comments "$1" | grep -cE "^Status:[[:space:]]*$2[[:space:]]*\$" || true)"
     echo "${n:-0}"
   }
 

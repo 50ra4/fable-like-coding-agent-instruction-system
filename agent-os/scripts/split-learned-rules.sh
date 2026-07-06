@@ -106,6 +106,10 @@ find_blocks() {
     }
     BEGIN { in_comment = 0; in_block = 0 }
     {
+      # Strip a trailing \r first, so a CRLF-converted learned-rules.md
+      # still parses correctly (name/status/scope exact-match comparisons
+      # below would otherwise carry a trailing \r and never match).
+      sub(/\r$/, "")
       if ($0 ~ /<!--/) in_comment = 1
       if (!in_comment) {
         if ($0 ~ /^## Rule:/) {
@@ -140,12 +144,21 @@ target_has_rule() {
   [[ -f "$target" ]] || return 1
   lname="$(low "$name")"
   grep -i '^## Rule:' "$target" 2>/dev/null \
-    | sed -E 's/^## Rule:[ \t]*//; s/[ \t]+$//' \
+    | sed -E 's/^## Rule:[ \t]*//; s/[ \t\r]+$//' \
     | tr '[:upper:]' '[:lower:]' \
     | grep -qxF "$lname"
 }
 
 mapfile -t LINES < "$RULES_FILE"
+# Strip a trailing \r from every loaded line so a CRLF-converted
+# learned-rules.md still works with the exact-string comparisons below
+# (blank-line detection when trimming trailing blanks, "## Active rules
+# index"/"## Active rules" heading matches, existing index-line
+# matching) -- otherwise a line like "## Active rules index\r" would
+# never equal the literal "## Active rules index".
+for ((_li = 0; _li < ${#LINES[@]}; _li++)); do
+  LINES[$_li]="${LINES[$_li]%$'\r'}"
+done
 TOTAL_LINES=${#LINES[@]}
 
 declare -a B_START=() B_END=() B_NAME=() B_STATUS=() B_SCOPE=()

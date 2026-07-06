@@ -131,7 +131,11 @@ parse_rules() {
   # Strip HTML comment blocks first (templates ship a "## Rule: <short
   # name>" example inside a "<!-- Example (delete me) -->" comment; that
   # is documentation, not a real rule, and must not be parsed as one).
+  # Also strips a trailing \r from every line first, so a CRLF-converted
+  # rules file still parses correctly (name/status/scope exact-match
+  # comparisons below would otherwise carry a trailing \r and never match).
   awk '
+    { sub(/\r$/, "") }
     /<!--/ { in_comment = 1 }
     !in_comment { print }
     /-->/ { in_comment = 0 }

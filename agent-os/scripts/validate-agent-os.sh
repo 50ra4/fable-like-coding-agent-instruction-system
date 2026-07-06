@@ -85,13 +85,18 @@ check_skill_md() {
   fi
   local first_line
   first_line="$(sed -n '1p' "$f")"
+  # Strip a trailing \r so a CRLF-line-ended file (where the raw first
+  # line is "---\r") is not false-FAILed here.
+  first_line="${first_line%$'\r'}"
   if [[ "$first_line" != "---" ]]; then
     fail "SKILL.md frontmatter must start with '---' on line 1: $f"
     return
   fi
-  # Frontmatter body = lines between the opening and closing '---'.
+  # Frontmatter body = lines between the opening and closing '---'. The
+  # closing-marker regex also tolerates a trailing \r (CRLF) so it still
+  # matches and the loop actually terminates at the frontmatter boundary.
   local block
-  block="$(awk 'NR==1{next} /^---$/{exit} {print}' "$f")"
+  block="$(awk 'NR==1{next} /^---\r?$/{exit} {print}' "$f")"
   local ok=1
   if ! grep -q '^name:' <<<"$block"; then
     fail "SKILL.md frontmatter missing 'name:' key: $f"

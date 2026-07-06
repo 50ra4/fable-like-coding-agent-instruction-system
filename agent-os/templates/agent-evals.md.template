@@ -83,14 +83,14 @@ Learning check:
 - Which failure should not recur? failure-log.md, 2026-01-14 entry.
 -->
 
-## Results log
+## Results
 
 <!--
 Record every eval run here, pass or fail, so drift over time is visible.
 -->
 
-| Date | Eval name | Model | Pass/Fail | Notes |
-| ---- | --------- | ----- | --------- | ----- |
+| Date | Eval | Model | Pass/Fail | Notes |
+|------|------|-------|-----------|-------|
 
 <!--
 Example row (delete me):

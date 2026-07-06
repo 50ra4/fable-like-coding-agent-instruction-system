@@ -41,25 +41,35 @@ Global Layer は他の層の内容を決して取り込まず、Project Adapter 
 
 ## Claude Code での導入方法
 
-1. `claude/CLAUDE.md` を対象プロジェクトのルートに `CLAUDE.md` としてコピーするか、既存の `CLAUDE.md` から参照する。
-2. `claude/skills` を対象プロジェクトの `.claude/skills/` にコピーする。
-3. `claude/agents` を対象プロジェクトの `.claude/agents/` にコピーする。
-4. `scripts/bootstrap-project.sh` を実行し、プロジェクト固有の `.agent-os/` を生成する。
+`scripts/bootstrap-project.sh` を実行するのが正式な導入方法です（手動手順はあくまで fallback で、詳細な手順は `INSTALL.md` を参照してください）。
 
 ```bash
 bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for claude
 ```
 
+このコマンドは次を配置します。
+
+1. `project-adapter/CLAUDE.md`（`{{PROJECT_NAME}}` などのプレースホルダ入り）を対象プロジェクトのルートに `CLAUDE.md` としてコピーする（既に `CLAUDE.md` が存在する場合は上書きせず、そのまま保持する）。
+2. `claude/skills` を対象プロジェクトの `.claude/skills/` にコピーする。
+3. `claude/agents` を対象プロジェクトの `.claude/agents/` にコピーする。
+4. `GLOBAL_AGENTS.md` / `GLOBAL_CLAUDE.md` と canonical スキル一式（`skills/`）を、それぞれ `.agent-os/GLOBAL_AGENTS.md` / `.agent-os/GLOBAL_CLAUDE.md` / `.agent-os/skills/` としてベンダリング（コピー）する。
+5. プロジェクト固有の `.agent-os/` アダプタ状態ファイル一式を生成する。
+
 ## Codex での導入方法
 
-1. `codex/AGENTS.md` を対象プロジェクトのルートに `AGENTS.md` としてコピーするか、既存の `AGENTS.md` から参照する。
-2. `codex/agents/*.toml` を対象プロジェクトの `.codex/agents/` にコピーする。
-3. `codex/skills` を対象プロジェクトの `.agents/skills/` にコピーする。
-4. `scripts/bootstrap-project.sh` を実行し、プロジェクト固有の `.agent-os/` を生成する。
+`scripts/bootstrap-project.sh` を実行するのが正式な導入方法です（手動手順はあくまで fallback で、詳細な手順は `INSTALL.md` を参照してください）。
 
 ```bash
 bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for codex
 ```
+
+このコマンドは次を配置します。
+
+1. `project-adapter/AGENTS.md`（`{{PROJECT_NAME}}` などのプレースホルダ入り）を対象プロジェクトのルートに `AGENTS.md` としてコピーする（既に `AGENTS.md` が存在する場合は上書きせず、そのまま保持する）。
+2. `codex/agents/*.toml` を対象プロジェクトの `.codex/agents/` にコピーする。
+3. `codex/skills` を対象プロジェクトの `.agents/skills/` にコピーする。
+4. `GLOBAL_AGENTS.md` と canonical スキル一式（`skills/`）を、それぞれ `.agent-os/GLOBAL_AGENTS.md` / `.agent-os/skills/` としてベンダリング（コピー）する。
+5. プロジェクト固有の `.agent-os/` アダプタ状態ファイル一式を生成する。
 
 `bootstrap-project.sh` はこのとき Global Layer の `GLOBAL_AGENTS.md`（`--for` を問わず常に）と `GLOBAL_CLAUDE.md`（`--for claude` / `both` のとき）も `<TARGET>/.agent-os/` 配下にベンダリング（コピー）し、生成された `CLAUDE.md`/`AGENTS.md` やスキルはそのベンダリング済みパスを参照します。
 
