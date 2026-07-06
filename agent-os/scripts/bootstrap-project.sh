@@ -58,6 +58,13 @@ Options:
                       --force for OS-owned files.
   --help              Show this help text and exit.
 
+Symlink safety: this script never writes through or replaces a symlinked
+destination. If a destination path is itself a symlink, or a directory
+component of it is a symlink that would redirect the write outside the
+target directory, the write is refused and reported as a
+"BLOCKED (symlink):" line (counted separately in the summary). Remove
+the symlink manually if you want a regular file installed there.
+
 Examples:
   bootstrap-project.sh --target ../my-app --for claude
   bootstrap-project.sh --target ../my-app --for both --force
@@ -124,6 +131,14 @@ fi
 
 TARGET_ABS="$(cd "$TARGET" && pwd)"
 PROJECT_NAME="$(basename "$TARGET_ABS")"
+# Physical (symlink-resolved) path of the target, used by copy_file()'s
+# containment check to detect a symlinked intermediate directory that
+# would otherwise silently redirect a write outside the target project.
+TARGET_PHYS="$(cd "$TARGET_ABS" && pwd -P)"
+# PROJECT_NAME escaped for safe use as a sed replacement string: a target
+# directory basename containing &, /, or \ would otherwise break (or
+# misbehave in) the {{PROJECT_NAME}} substitution in apply_project_name().
+PROJECT_NAME_ESCAPED="$(printf '%s' "$PROJECT_NAME" | sed 's/[&/\]/\\&/g')"
 
 # The 8 project-owned adapter state files (relative to <target>/.agent-os/,
 # without the .md extension). Must match project-adapter/.agent-os/*.md and
@@ -135,10 +150,12 @@ INSTALLED_COUNT=0
 SKIPPED_COUNT=0
 PROTECTED_COUNT=0
 BACKED_UP_COUNT=0
+BLOCKED_COUNT=0
 INSTALLED_LIST=()
 SKIPPED_LIST=()
 PROTECTED_LIST=()
 BACKED_UP_LIST=()
+BLOCKED_LIST=()
 BACKUP_DIR=""
 LAST_ACTION=""
 
@@ -146,13 +163,22 @@ warn() { echo "WARN: $*"; }
 info() { echo "INFO: $*"; }
 
 # Copy a single file to a destination path, honoring --force / skip /
-# protected rules. Sets LAST_ACTION to "installed", "skipped", or
-# "protected".
+# protected rules. Sets LAST_ACTION to "installed", "skipped", "protected",
+# or "blocked".
 #
 # protected=1 marks a file as project-owned adapter state: if it already
 # exists and --force was passed, it is preserved (never overwritten) and a
 # PROTECTED: line is printed instead. Without --force, or when the file
 # does not yet exist, behavior is identical to protected=0.
+#
+# Symlink safety (checked FIRST, before protected/exists logic, so a
+# symlinked protected file is reported as BLOCKED rather than silently
+# PROTECTED): if $dest already exists and is itself a symlink, this
+# script refuses to write through or replace it -- plain `cp` would
+# follow the link and overwrite whatever it points at, possibly outside
+# the target project. It also refuses if a directory component of $dest
+# is a symlink that resolves outside the target project (a symlinked
+# parent directory silently redirecting the write).
 copy_file() {
   local src="$1"
   local dest="$2"
@@ -163,6 +189,14 @@ copy_file() {
     LAST_ACTION="skipped"
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
     SKIPPED_LIST+=("$dest (source missing)")
+    return
+  fi
+
+  if [[ -L "$dest" ]]; then
+    echo "BLOCKED (symlink): destination is a symlink; refusing to write through or replace it: $dest (remove the symlink manually if you want a regular file installed here)"
+    LAST_ACTION="blocked"
+    BLOCKED_COUNT=$((BLOCKED_COUNT + 1))
+    BLOCKED_LIST+=("$dest (destination is a symlink)")
     return
   fi
 
@@ -185,6 +219,22 @@ copy_file() {
   fi
 
   mkdir -p "$(dirname "$dest")"
+
+  # Physical containment check: resolve the destination's parent directory
+  # and require it to be the target directory or a descendant of it. This
+  # catches a symlinked intermediate directory (e.g. .claude/agents ->
+  # /somewhere/else) that the -L check on $dest alone would miss, since
+  # $dest itself may not exist yet even though a parent component does.
+  local phys_parent
+  phys_parent="$(cd "$(dirname "$dest")" && pwd -P)"
+  if [[ "$phys_parent" != "$TARGET_PHYS" && "$phys_parent" != "$TARGET_PHYS"/* ]]; then
+    echo "BLOCKED (symlink): a symlinked parent directory redirected this write outside the target project: $dest (resolved parent: $phys_parent); refusing to write. Remove the symlink manually if you want a regular directory here."
+    LAST_ACTION="blocked"
+    BLOCKED_COUNT=$((BLOCKED_COUNT + 1))
+    BLOCKED_LIST+=("$dest (symlinked parent directory escapes target)")
+    return
+  fi
+
   cp "$src" "$dest"
   LAST_ACTION="installed"
   INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
@@ -239,11 +289,17 @@ copy_flat_glob() {
 
 # Replace the {{PROJECT_NAME}} placeholder in a copied file, in place.
 # Only ever run on files this script just installed (the copies), never
-# on arbitrary user files.
+# on arbitrary user files. Uses PROJECT_NAME_ESCAPED (computed once above)
+# rather than PROJECT_NAME directly, so a target directory basename
+# containing sed-special characters (&, /, \) is substituted literally
+# instead of corrupting or breaking the substitution.
 apply_project_name() {
   local file="$1"
+  # Defense in depth: copy_file() already refuses to write through a
+  # symlinked destination, so this should never see one; guard anyway.
+  [[ -L "$file" ]] && return
   [[ -f "$file" ]] || return
-  sed -i.bak "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" "$file"
+  sed -i.bak "s/{{PROJECT_NAME}}/$PROJECT_NAME_ESCAPED/g" "$file"
   rm -f "$file.bak"
 }
 
@@ -270,27 +326,39 @@ reset_adapter() {
   ts="$(date +%Y%m%d-%H%M%S)"
   local backup_dir="$TARGET_ABS/.agent-os/backup-$ts"
   local any=0
-  local f src
+  local f src was_symlink note
 
+  # Note: if a protected file is itself a symlink, `mv` moves the link
+  # entry itself (it does not follow it and does not write through it),
+  # so this is safe. The backup list simply calls out that it was a
+  # symlink so the summary is honest about what got backed up.
   for f in "${ADAPTER_STATE_FILES[@]}"; do
     src="$TARGET_ABS/.agent-os/$f.md"
-    if [[ -f "$src" ]]; then
+    if [[ -f "$src" || -L "$src" ]]; then
+      was_symlink=0
+      [[ -L "$src" ]] && was_symlink=1
       mkdir -p "$backup_dir"
       mv "$src" "$backup_dir/$f.md"
       any=1
       BACKED_UP_COUNT=$((BACKED_UP_COUNT + 1))
-      BACKED_UP_LIST+=("$backup_dir/$f.md (was .agent-os/$f.md)")
+      note="was .agent-os/$f.md"
+      [[ "$was_symlink" -eq 1 ]] && note="was .agent-os/$f.md, a symlink -- the link itself was moved, not its target"
+      BACKED_UP_LIST+=("$backup_dir/$f.md ($note)")
     fi
   done
 
   for f in CLAUDE.md AGENTS.md; do
     src="$TARGET_ABS/$f"
-    if [[ -f "$src" ]]; then
+    if [[ -f "$src" || -L "$src" ]]; then
+      was_symlink=0
+      [[ -L "$src" ]] && was_symlink=1
       mkdir -p "$backup_dir"
       mv "$src" "$backup_dir/$f"
       any=1
       BACKED_UP_COUNT=$((BACKED_UP_COUNT + 1))
-      BACKED_UP_LIST+=("$backup_dir/$f (was $f)")
+      note="was $f"
+      [[ "$was_symlink" -eq 1 ]] && note="was $f, a symlink -- the link itself was moved, not its target"
+      BACKED_UP_LIST+=("$backup_dir/$f ($note)")
     fi
   done
 
@@ -353,6 +421,10 @@ echo "Protected: $PROTECTED_COUNT file(s) (project-owned state, preserved despit
 for f in "${PROTECTED_LIST[@]:-}"; do
   [[ -n "$f" ]] && echo "  ! $f"
 done
+echo "Blocked:   $BLOCKED_COUNT file(s) (refused: symlinked destination or symlinked parent directory)"
+for f in "${BLOCKED_LIST[@]:-}"; do
+  [[ -n "$f" ]] && echo "  x $f"
+done
 if [[ "$RESET_ADAPTER" -eq 1 ]]; then
   echo "Backed up: $BACKED_UP_COUNT file(s)$( [[ -n "$BACKUP_DIR" ]] && echo " -> $BACKUP_DIR" )"
   for f in "${BACKED_UP_LIST[@]:-}"; do
@@ -360,7 +432,9 @@ if [[ "$RESET_ADAPTER" -eq 1 ]]; then
   done
 fi
 echo
-if [[ "$PROTECTED_COUNT" -gt 0 ]]; then
+if [[ "$BLOCKED_COUNT" -gt 0 ]]; then
+  echo "Next step: review BLOCKED (symlink) lines above; remove the offending symlink(s) manually, then rerun."
+elif [[ "$PROTECTED_COUNT" -gt 0 ]]; then
   echo "Next step: review PROTECTED: lines above; run with --reset-adapter (backs up first) if you really want to replace them."
 else
   echo "Next step: run the project-bootstrap skill before changing any code."

@@ -42,7 +42,8 @@ Options:
 
 Exit codes:
   0   success (list/show/record done; check with no failures)
-  1   --check --exec found a failing or refused validation command
+  1   --check --exec found a failing or refused validation command, or
+      --record refused because evals.md is a symlink
   2   usage error (bad flags, unknown eval name, missing files)
 EOF
 }
@@ -158,6 +159,35 @@ if [[ ! -f "$EVALS_FILE" ]]; then
 fi
 
 # ---- Shared helpers ---------------------------------------------------
+
+trim() {
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
+}
+
+# Extract exact-match candidate command strings from a (comment-stripped)
+# command-map.md. Two sources, both emitted one candidate per line:
+#   (a) every backtick-delimited span (how commands are quoted in the
+#       command-map table, e.g. `npm test -- --grep widgets`)
+#   (b) every line trimmed of leading "-"/"|"/whitespace and trailing
+#       table pipes/whitespace (covers plain bullet-style entries)
+# The validation command must equal one of these candidates EXACTLY
+# (after trimming) -- a containment/substring match is not enough, since
+# a shorter command being a substring of a longer verified one does not
+# mean the shorter command itself was ever verified.
+command_map_candidates() {
+  local content="$1"
+  grep -oE '`[^`]+`' <<<"$content" 2>/dev/null | sed -E 's/^`//; s/`$//'
+  sed -E '
+    s/^[[:space:]]+//
+    s/^[-|][[:space:]]*//
+    s/[[:space:]]+$//
+    s/\|+[[:space:]]*$//
+    s/[[:space:]]+$//
+  ' <<<"$content"
+}
 
 strip_html_comments() {
   # Remove HTML comment blocks (<!-- ... -->, possibly multi-line) before
@@ -333,13 +363,20 @@ run_check() {
   fi
 
   # --exec: gate each command against command-map.md before running.
+  # The gate is an EXACT match against candidate command strings extracted
+  # from command-map.md, not a substring/containment check -- a command
+  # that merely happens to be a substring of a longer verified command
+  # (e.g. "npm test" vs. a mapped "npm test -- --grep widgets") was never
+  # itself verified and must not be allowed to run.
   local overall_fail=0
   local stripped_map=""
+  local map_candidates=""
   if [[ -f "$COMMAND_MAP_FILE" ]]; then
     stripped_map="$(strip_html_comments "$COMMAND_MAP_FILE")"
+    map_candidates="$(command_map_candidates "$stripped_map")"
   fi
 
-  local c lower
+  local c lower c_trimmed
   for c in "${commands[@]}"; do
     lower="$(echo "$c" | tr '[:upper:]' '[:lower:]')"
     if [[ "$lower" == *manual* ]]; then
@@ -347,8 +384,9 @@ run_check() {
       continue
     fi
 
-    if [[ -z "$stripped_map" ]] || ! grep -qF -- "$c" <<<"$stripped_map"; then
-      echo "REFUSED: command not in .agent-os/command-map.md -- run manually after verifying"
+    c_trimmed="$(trim "$c")"
+    if [[ -z "$stripped_map" ]] || ! grep -qxF -- "$c_trimmed" <<<"$map_candidates"; then
+      echo "REFUSED: command does not appear exactly in .agent-os/command-map.md -- run manually after verifying"
       echo "  command: $c"
       overall_fail=1
       continue
@@ -374,6 +412,14 @@ run_check() {
 run_record() {
   local target="$1"
   eval_exists "$target" || die_unknown_eval "$target"
+
+  # Symlink safety: --record rewrites evals.md in place (via a temp file
+  # + mv). Refuse outright if evals.md is a symlink rather than writing
+  # a fresh file over/through it.
+  if [[ -L "$EVALS_FILE" ]]; then
+    echo "ERROR: refusing to record into $EVALS_FILE: it is a symlink (remove it manually if you want a regular file there)" >&2
+    exit 1
+  fi
 
   if [[ "$RESULT_VAL" != "pass" && "$RESULT_VAL" != "fail" ]]; then
     echo "ERROR: --result must be 'pass' or 'fail' (got: '$RESULT_VAL')" >&2

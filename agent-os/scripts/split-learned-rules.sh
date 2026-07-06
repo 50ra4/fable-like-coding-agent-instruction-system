@@ -34,8 +34,13 @@ it is never appended twice. This script never deletes rule content;
 it only moves verbatim blocks. Safe to rerun: once a rule has been
 moved, later runs find no active blocks left to move.
 
+Symlink safety: refuses to run (non-dry-run) if learned-rules.md, the
+.agent-os/rules directory, or any rules/<scope>.md file it is about to
+write into is a symlink, rather than writing through it.
+
 Exit codes:
   0   completed (see summary line for counts; warnings do not fail)
+  1   refused: a file/directory to be modified is a symlink
   2   usage error
 EOF
 }
@@ -230,6 +235,19 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   exit 0
 fi
 
+# ---- Symlink safety: refuse to write through a symlink -----------------
+# learned-rules.md and .agent-os/rules/ are about to be modified below
+# (rewritten in place / appended into); refuse outright if either is a
+# symlink rather than silently writing through it to wherever it points.
+if [[ -L "$RULES_FILE" ]]; then
+  echo "ERROR: refusing to modify $RULES_FILE: it is a symlink (remove it manually if you want a regular file there)" >&2
+  exit 1
+fi
+if [[ -e "$RULES_DIR" && -L "$RULES_DIR" ]]; then
+  echo "ERROR: refusing to write into $RULES_DIR: it is a symlink (remove it manually if you want a regular directory there)" >&2
+  exit 1
+fi
+
 # ---- Apply: append moved blocks to their target rules/*.md files -------
 declare -a DEL_START=() DEL_END=()
 declare -a NEW_INDEX_LINES=()
@@ -247,6 +265,11 @@ for ((i = 0; i < NUM_BLOCKS; i++)); do
 
   target="${TARGET[$i]}"
   scope_lower="$(low "${B_SCOPE[$i]}")"
+
+  if [[ -L "$target" ]]; then
+    echo "ERROR: refusing to write into $target: it is a symlink (remove it manually if you want a regular file there)" >&2
+    exit 1
+  fi
 
   mkdir -p "$RULES_DIR"
   if [[ ! -f "$target" ]]; then
