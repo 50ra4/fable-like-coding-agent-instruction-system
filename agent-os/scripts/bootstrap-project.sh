@@ -11,6 +11,14 @@
 # (--reset-adapter moves files into a timestamped backup, it does not
 # remove them).
 #
+# Symlink safety principle (applies to every copy, every directory this
+# script creates, and every --reset-adapter backup move): a path is only
+# ever operated on if (1) no existing component of it is a symlink, and
+# (2) its physical resolution (pwd -P) stays inside the target project /
+# adapter root. Any violation is refused explicitly -- nothing is ever
+# written, mkdir'd, or moved outside the target as a side effect, even
+# when the refused write itself leaves no other trace.
+#
 # Ownership split:
 #   - OS-owned (regenerable, --force overwrites them): .claude/skills/,
 #     .claude/agents/, .codex/agents/, .agents/skills/, the vendored
@@ -59,11 +67,20 @@ Options:
   --help              Show this help text and exit.
 
 Symlink safety: this script never writes through or replaces a symlinked
-destination. If a destination path is itself a symlink, or a directory
-component of it is a symlink that would redirect the write outside the
-target directory, the write is refused and reported as a
-"BLOCKED (symlink):" line (counted separately in the summary). Remove
-the symlink manually if you want a regular file installed there.
+destination, never creates a directory through a symlinked path
+component, and never moves a --reset-adapter backup through one either.
+Before any write, mkdir, or move, every existing directory component of
+the path in question must not be a symlink, and the path's physical
+(symlink-resolved) resolution must stay inside the target project /
+adapter root -- otherwise the operation is refused outright rather than
+silently redirected. Top-level Agent OS directories under the target
+(.agent-os, .claude, .codex, .agents) are checked for this up front,
+before any mode does any work; individual copies additionally refuse
+with a "BLOCKED (symlink):" line (counted separately in the summary,
+with no directories left behind outside the target as a side effect);
+--reset-adapter refuses with an ERROR and exits 1, having moved nothing.
+Remove the symlink manually if you want a regular file/directory
+installed there.
 
 Examples:
   bootstrap-project.sh --target ../my-app --for claude
@@ -135,6 +152,28 @@ PROJECT_NAME="$(basename "$TARGET_ABS")"
 # containment check to detect a symlinked intermediate directory that
 # would otherwise silently redirect a write outside the target project.
 TARGET_PHYS="$(cd "$TARGET_ABS" && pwd -P)"
+
+# ---- Startup symlink gate (defense layer 1) ---------------------------
+# Refuse outright, before any write/mkdir/move of any kind and for every
+# mode (plain install, --force, --reset-adapter), if a top-level Agent
+# OS directory under the target is itself a symlink. Without this, a
+# symlinked .agent-os (or .claude/.codex/.agents) would let copy_file()
+# resolve destinations, and reset_adapter() resolve its backup_dir,
+# through the link -- silently relocating adapter files (even root
+# CLAUDE.md/AGENTS.md, via --reset-adapter) outside the project before
+# any per-write guard runs. copy_file()'s per-write containment check
+# and reset_adapter()'s own checks are defense layer 2, for directories
+# and components that do not exist yet at startup and only come into
+# being once the script itself starts creating them.
+for _ao_top_dir in .agent-os .claude .codex .agents; do
+  _ao_top_path="$TARGET_ABS/$_ao_top_dir"
+  if [[ -L "$_ao_top_path" ]]; then
+    echo "ERROR: $_ao_top_path is a symlink; refusing to operate on a target whose Agent OS directories are symlinked" >&2
+    exit 1
+  fi
+done
+unset _ao_top_dir _ao_top_path
+
 # PROJECT_NAME escaped for safe use as a sed replacement string: a target
 # directory basename containing &, /, or \ would otherwise break (or
 # misbehave in) the {{PROJECT_NAME}} substitution in apply_project_name().
@@ -161,6 +200,66 @@ LAST_ACTION=""
 
 warn() { echo "WARN: $*"; }
 info() { echo "INFO: $*"; }
+
+# Set by safe_mkdir_within_target() on failure to the specific path that
+# triggered the refusal (a symlinked component, or the final resolved
+# path if the containment check itself failed), for use in caller error
+# messages.
+SAFE_MKDIR_FAIL_PATH=""
+
+# Create directory $1 -- which must be TARGET_ABS itself or a path
+# beneath it -- one path component at a time, starting from TARGET_ABS,
+# refusing to proceed the moment any existing component turns out to be
+# a symlink. This replaces a plain `mkdir -p` followed by a containment
+# check: `mkdir -p` walks and creates every missing component in one
+# call *before* anything can be checked, so a symlinked intermediate
+# component still causes directories to be created outside the target
+# as a side effect even when the eventual write is refused. Walking and
+# checking component-by-component means no directory is ever created
+# outside the target, full stop -- a refused destination leaves no
+# trace at all.
+#
+# Used both for a copy_file() destination's parent directory and for
+# --reset-adapter's backup directory (reset_adapter() below), so the
+# same guarantee applies to both.
+#
+# Returns 0 and leaves $1 created on success. Returns 1 and creates
+# nothing further on failure, with SAFE_MKDIR_FAIL_PATH set.
+safe_mkdir_within_target() {
+  local dir="$1"
+  SAFE_MKDIR_FAIL_PATH=""
+
+  local rel="${dir#"$TARGET_ABS"}"
+  rel="${rel#/}"
+
+  local cur="$TARGET_ABS"
+  if [[ -n "$rel" ]]; then
+    local part
+    local IFS=/
+    for part in $rel; do
+      [[ -z "$part" ]] && continue
+      cur="$cur/$part"
+      if [[ -L "$cur" ]]; then
+        SAFE_MKDIR_FAIL_PATH="$cur"
+        return 1
+      fi
+      if [[ ! -e "$cur" ]]; then
+        mkdir "$cur" || { SAFE_MKDIR_FAIL_PATH="$cur"; return 1; }
+      fi
+    done
+  fi
+
+  # Belt-and-suspenders: after the component walk, the directory's
+  # physical (symlink-resolved) path must still be the target directory
+  # itself or a descendant of it.
+  local phys
+  phys="$(cd "$dir" && pwd -P)" || { SAFE_MKDIR_FAIL_PATH="$dir"; return 1; }
+  if [[ "$phys" != "$TARGET_PHYS" && "$phys" != "$TARGET_PHYS"/* ]]; then
+    SAFE_MKDIR_FAIL_PATH="$phys"
+    return 1
+  fi
+  return 0
+}
 
 # Copy a single file to a destination path, honoring --force / skip /
 # protected rules. Sets LAST_ACTION to "installed", "skipped", "protected",
@@ -218,17 +317,17 @@ copy_file() {
     # protected=0 and --force was passed: fall through and overwrite.
   fi
 
-  mkdir -p "$(dirname "$dest")"
-
-  # Physical containment check: resolve the destination's parent directory
-  # and require it to be the target directory or a descendant of it. This
-  # catches a symlinked intermediate directory (e.g. .claude/agents ->
-  # /somewhere/else) that the -L check on $dest alone would miss, since
-  # $dest itself may not exist yet even though a parent component does.
-  local phys_parent
-  phys_parent="$(cd "$(dirname "$dest")" && pwd -P)"
-  if [[ "$phys_parent" != "$TARGET_PHYS" && "$phys_parent" != "$TARGET_PHYS"/* ]]; then
-    echo "BLOCKED (symlink): a symlinked parent directory redirected this write outside the target project: $dest (resolved parent: $phys_parent); refusing to write. Remove the symlink manually if you want a regular directory here."
+  # Create the destination's parent directory component-by-component,
+  # refusing (with no directories left behind outside the target, even
+  # in the refused case) if any existing or newly-needed component is a
+  # symlink or resolves outside the target project. This catches a
+  # symlinked intermediate directory (e.g. .claude/skills -> /somewhere/
+  # else, possibly several levels below the top-level Agent OS dirs the
+  # startup gate already checked) that the -L check on $dest alone would
+  # miss, since $dest itself may not exist yet even though a parent
+  # component does.
+  if ! safe_mkdir_within_target "$(dirname "$dest")"; then
+    echo "BLOCKED (symlink): a symlinked parent directory redirected this write outside the target project: $dest (blocked at: $SAFE_MKDIR_FAIL_PATH); refusing to write. Remove the symlink manually if you want a regular directory here."
     LAST_ACTION="blocked"
     BLOCKED_COUNT=$((BLOCKED_COUNT + 1))
     BLOCKED_LIST+=("$dest (symlinked parent directory escapes target)")
@@ -319,25 +418,64 @@ vendor_canonical_skills() {
   copy_dir_contents "$AGENT_OS_ROOT/skills" "$vendor_dir"
 }
 
+# Ensure the --reset-adapter backup directory exists and is safe to move
+# into, creating it (via safe_mkdir_within_target(), the same
+# component-walking guard copy_file() uses) the first time this is
+# called. Exits 1 immediately -- before any mv -- on any symlink or
+# containment violation, so a violation here leaves nothing moved.
+ensure_reset_backup_dir() {
+  local backup_dir="$1"
+  [[ -d "$backup_dir" ]] && return 0
+  if ! safe_mkdir_within_target "$backup_dir"; then
+    echo "ERROR: refusing --reset-adapter: could not safely create backup directory $backup_dir (blocked at: $SAFE_MKDIR_FAIL_PATH); nothing moved" >&2
+    exit 1
+  fi
+}
+
 # ---- --reset-adapter: back up existing protected files, then let the ----
 # ---- normal install steps below install fresh copies in their place. ----
 reset_adapter() {
   local ts
   ts="$(date +%Y%m%d-%H%M%S)"
-  local backup_dir="$TARGET_ABS/.agent-os/backup-$ts"
+  local ao_dir="$TARGET_ABS/.agent-os"
+  local backup_dir="$ao_dir/backup-$ts"
   local any=0
   local f src was_symlink note
 
+  # Defense layer 2 (beneath the startup gate above, which already
+  # refuses if .agent-os itself is a symlink before reset_adapter() is
+  # ever called): re-verify here, right before doing anything else, that
+  # if .agent-os exists it is not a symlink and its physical
+  # (symlink-resolved) path is exactly TARGET_PHYS/.agent-os -- not
+  # somewhere else reached through a symlinked ancestor component. This
+  # runs before the backup directory is created and before any file is
+  # moved, so a violation leaves the target and the backup_dir's
+  # eventual location completely untouched.
+  if [[ -e "$ao_dir" ]]; then
+    if [[ -L "$ao_dir" ]]; then
+      echo "ERROR: refusing --reset-adapter: $ao_dir is a symlink; nothing moved" >&2
+      exit 1
+    fi
+    local ao_phys
+    ao_phys="$(cd "$ao_dir" && pwd -P)"
+    if [[ "$ao_phys" != "$TARGET_PHYS/.agent-os" ]]; then
+      echo "ERROR: refusing --reset-adapter: $ao_dir resolves to $ao_phys, outside $TARGET_PHYS/.agent-os (a symlinked ancestor directory redirected it); nothing moved" >&2
+      exit 1
+    fi
+  fi
+
   # Note: if a protected file is itself a symlink, `mv` moves the link
   # entry itself (it does not follow it and does not write through it),
-  # so this is safe. The backup list simply calls out that it was a
-  # symlink so the summary is honest about what got backed up.
+  # so this is safe -- provided its parent directory (verified above, or
+  # TARGET_ABS itself for the root CLAUDE.md/AGENTS.md case) has already
+  # passed the checks above. The backup list simply calls out that it
+  # was a symlink so the summary is honest about what got backed up.
   for f in "${ADAPTER_STATE_FILES[@]}"; do
     src="$TARGET_ABS/.agent-os/$f.md"
     if [[ -f "$src" || -L "$src" ]]; then
       was_symlink=0
       [[ -L "$src" ]] && was_symlink=1
-      mkdir -p "$backup_dir"
+      ensure_reset_backup_dir "$backup_dir"
       mv "$src" "$backup_dir/$f.md"
       any=1
       BACKED_UP_COUNT=$((BACKED_UP_COUNT + 1))
@@ -352,7 +490,7 @@ reset_adapter() {
     if [[ -f "$src" || -L "$src" ]]; then
       was_symlink=0
       [[ -L "$src" ]] && was_symlink=1
-      mkdir -p "$backup_dir"
+      ensure_reset_backup_dir "$backup_dir"
       mv "$src" "$backup_dir/$f"
       any=1
       BACKED_UP_COUNT=$((BACKED_UP_COUNT + 1))

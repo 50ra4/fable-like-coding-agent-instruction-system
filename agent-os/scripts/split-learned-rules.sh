@@ -34,13 +34,17 @@ it is never appended twice. This script never deletes rule content;
 it only moves verbatim blocks. Safe to rerun: once a rule has been
 moved, later runs find no active blocks left to move.
 
-Symlink safety: refuses to run (non-dry-run) if learned-rules.md, the
-.agent-os/rules directory, or any rules/<scope>.md file it is about to
-write into is a symlink, rather than writing through it.
+Symlink safety: refuses to run (non-dry-run) if .agent-os itself is a
+symlink or does not physically resolve inside --adapter <dir>, or if
+learned-rules.md, the .agent-os/rules directory, or any rules/<scope>.md
+file it is about to write into is a symlink, rather than writing through
+it. A temp file used to rewrite learned-rules.md is always created
+inside the same verified .agent-os directory.
 
 Exit codes:
   0   completed (see summary line for counts; warnings do not fail)
-  1   refused: a file/directory to be modified is a symlink
+  1   refused: .agent-os is a symlink or escapes --adapter <dir>, or a
+      file/directory to be modified is a symlink
   2   usage error
 EOF
 }
@@ -249,9 +253,32 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
 fi
 
 # ---- Symlink safety: refuse to write through a symlink -----------------
-# learned-rules.md and .agent-os/rules/ are about to be modified below
-# (rewritten in place / appended into); refuse outright if either is a
-# symlink rather than silently writing through it to wherever it points.
+# Shared-style guard (same principle as bootstrap-project.sh): operate on
+# a path only if (1) no existing component of it is a symlink, and (2)
+# its physical resolution (pwd -P) stays inside the adapter root;
+# otherwise refuse explicitly without acting. Checked in order from the
+# outside in: .agent-os itself first (it did not exist as a check before
+# this fix -- only the specific files under it did), then the specific
+# files/directories about to be written below (rewritten in place /
+# appended into).
+if [[ ! -d "$ADAPTER_DIR" ]]; then
+  echo "ERROR: --adapter directory does not exist: $ADAPTER_DIR" >&2
+  exit 1
+fi
+ADAPTER_PHYS="$(cd "$ADAPTER_DIR" && pwd -P)"
+
+if [[ -L "$AO_DIR" ]]; then
+  echo "ERROR: refusing to modify $AO_DIR: it is a symlink (remove it manually if you want a regular directory there)" >&2
+  exit 1
+fi
+if [[ -e "$AO_DIR" ]]; then
+  AO_PHYS="$(cd "$AO_DIR" && pwd -P)"
+  if [[ "$AO_PHYS" != "$ADAPTER_PHYS/.agent-os" ]]; then
+    echo "ERROR: refusing to modify $AO_DIR: it resolves to $AO_PHYS, outside $ADAPTER_PHYS/.agent-os (a symlinked ancestor directory redirected it)" >&2
+    exit 1
+  fi
+fi
+
 if [[ -L "$RULES_FILE" ]]; then
   echo "ERROR: refusing to modify $RULES_FILE: it is a symlink (remove it manually if you want a regular file there)" >&2
   exit 1
@@ -375,6 +402,9 @@ if [[ "$EXIST_INDEX_START" -gt 0 ]]; then
 fi
 
 # ---- Rewrite learned-rules.md ------------------------------------------
+# The temp file is created alongside RULES_FILE, i.e. inside AO_DIR,
+# which the guard above already verified is not a symlink and physically
+# resolves inside --adapter <dir>.
 TMP_FILE="$(mktemp "${RULES_FILE}.XXXXXX")"
 
 write_index_section() {

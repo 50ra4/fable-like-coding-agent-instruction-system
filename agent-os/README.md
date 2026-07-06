@@ -83,6 +83,8 @@ bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for codex
 bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for both --reset-adapter
 ```
 
+対象プロジェクト配下の `.agent-os` / `.claude` / `.codex` / `.agents` がシンボリックリンクの場合（あるいはその配下の途中経路がシンボリックリンクの場合）、コピー・ディレクトリ作成・`--reset-adapter` のバックアップ移動のいずれも、対象プロジェクトの外側に書き込むことのないよう明示的に拒否されます（エラー終了し、何も移動・作成されません）。
+
 ## 新規プロジェクトでの bootstrap 手順
 
 新しいプロジェクトに Agent OS を導入したら、コードを変更する前に必ず次の順序で実行します。

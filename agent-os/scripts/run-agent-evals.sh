@@ -43,7 +43,8 @@ Options:
 Exit codes:
   0   success (list/show/record done; check with no failures)
   1   --check --exec found a failing or refused validation command, or
-      --record refused because evals.md is a symlink
+      --record refused because .agent-os is a symlink, .agent-os
+      escapes --adapter <dir>, or evals.md is a symlink
   2   usage error (bad flags, unknown eval name, missing files)
 EOF
 }
@@ -455,8 +456,35 @@ run_record() {
   require_unique_eval "$target"
 
   # Symlink safety: --record rewrites evals.md in place (via a temp file
-  # + mv). Refuse outright if evals.md is a symlink rather than writing
-  # a fresh file over/through it.
+  # + mv). Shared-style guard (same principle as bootstrap-project.sh
+  # and split-learned-rules.sh): operate on a path only if no existing
+  # component of it is a symlink and its physical resolution (pwd -P)
+  # stays inside the adapter root; otherwise refuse explicitly without
+  # acting. Check .agent-os itself first (this is the layer that was
+  # previously missing -- only evals.md itself was checked), then
+  # evals.md specifically.
+  if [[ ! -d "$ADAPTER_DIR" ]]; then
+    echo "ERROR: --adapter directory does not exist: $ADAPTER_DIR" >&2
+    exit 2
+  fi
+  local adapter_phys ao_dir
+  adapter_phys="$(cd "$ADAPTER_DIR" && pwd -P)"
+  ao_dir="$ADAPTER_DIR/.agent-os"
+  if [[ -L "$ao_dir" ]]; then
+    echo "ERROR: refusing to record into $ao_dir: it is a symlink (remove it manually if you want a regular directory there)" >&2
+    exit 1
+  fi
+  if [[ -e "$ao_dir" ]]; then
+    local ao_phys
+    ao_phys="$(cd "$ao_dir" && pwd -P)"
+    if [[ "$ao_phys" != "$adapter_phys/.agent-os" ]]; then
+      echo "ERROR: refusing to record into $ao_dir: it resolves to $ao_phys, outside $adapter_phys/.agent-os (a symlinked ancestor directory redirected it)" >&2
+      exit 1
+    fi
+  fi
+
+  # Refuse outright if evals.md is a symlink rather than writing a fresh
+  # file over/through it.
   if [[ -L "$EVALS_FILE" ]]; then
     echo "ERROR: refusing to record into $EVALS_FILE: it is a symlink (remove it manually if you want a regular file there)" >&2
     exit 1
@@ -483,6 +511,9 @@ run_record() {
   today="$(date +%F)"
   local new_row="| $today | $target | $MODEL_VAL | $RESULT_VAL | $notes |"
 
+  # tmp_file is created alongside EVALS_FILE, i.e. inside ao_dir, which
+  # the guard above already verified is not a symlink and physically
+  # resolves inside --adapter <dir>.
   local tmp_file
   tmp_file="$(mktemp "${EVALS_FILE}.XXXXXX")"
 
