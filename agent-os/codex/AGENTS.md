@@ -16,13 +16,12 @@ config level or at the project root as `AGENTS.md`.
    `.agent-os/command-map.md` — never invent one. Read-only inspection
    (`ls`, `cat`, `grep`, `find`, `git status`/`log`/`diff`) is always
    permitted, even while the map is still empty.
-5. Never read, print, or commit secrets (`.env` files, keys, tokens,
-   credentials).
-6. No destructive operations (`rm -rf`, force-push, dropping data,
+5. Never read, print, or commit secrets (`.env`, keys, tokens, credentials);
+   no destructive operations (`rm -rf`, force-push, dropping data,
    migrations) without explicit approval.
-7. On failure, record the command, cause, and prevention in
+6. On failure, record the command, cause, and prevention in
    `.agent-os/failure-log.md` — never hide or misreport a failure.
-8. Record user corrections in `.agent-os/review-feedback-log.md`; the same
+7. Record user corrections in `.agent-os/review-feedback-log.md`; the same
    correction repeated twice or more becomes an active rule in
    `.agent-os/learned-rules.md`.
 
@@ -31,12 +30,13 @@ config level or at the project root as `AGENTS.md`.
 If `.agent-os/` exists, read before any change: `project-profile.md`
 (observed facts), `command-map.md` (verified commands), `learned-rules.md`
 (honor rules with `Status: active`; `candidate` rules are not yet
-binding), and `risk-map.md` (approval-gated areas).
+binding; if `.agent-os/rules/` exists, its `Active rules index` points to
+`.agent-os/rules/*.md` files that are equally binding — read those too),
+and `risk-map.md` (approval-gated areas).
 
 ## Skills
 
-Long procedures live in skills, not here — read the relevant skill file
-before that workflow:
+Long procedures live in skills, not here — read the relevant skill file before that workflow:
 
 - `project-bootstrap` — first contact with an unfamiliar project; observe only, no changes.
 - `project-profile` — create/update `.agent-os/project-profile.md`, facts vs. hypotheses.
@@ -54,7 +54,7 @@ before that workflow:
 Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer`
 (diff correctness), `architecture-reviewer` (design/boundary review),
 `test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz,
-injection risk), `bug-investigator` (root cause, no fixing),
+injection risk), `bug-investigator` (root cause, no fixing), and
 `instruction-maintainer` (instruction-improvement proposals).
 
 No project-specific facts belong in this file — those live in `.agent-os/`.

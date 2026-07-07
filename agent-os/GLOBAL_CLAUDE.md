@@ -16,4 +16,4 @@ If it takes more than a few lines to explain, it does not belong in CLAUDE.md â€
 
 ## Session start
 
-If the project has a `.agent-os/` directory, read its adapter files (`project-profile.md`, `learned-rules.md`, `risk-map.md`, `command-map.md`) at the start of the session, before making any change. They contain project facts that CLAUDE.md intentionally omits.
+If the project has a `.agent-os/` directory, read its adapter files (`project-profile.md`, `learned-rules.md`, `risk-map.md`, `command-map.md`) at the start of the session, before making any change. They contain project facts that CLAUDE.md intentionally omits. If `.agent-os/rules/` exists, the active rule bodies live in `.agent-os/rules/*.md` â€” follow the `Active rules index` in `learned-rules.md` and read those files too; they are just as binding as if they were still in `learned-rules.md`.

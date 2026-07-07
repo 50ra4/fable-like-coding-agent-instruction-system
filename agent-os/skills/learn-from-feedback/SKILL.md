@@ -18,13 +18,13 @@ Turn what the user actually said — a correction, a "don't do that," a repeated
 
 - The verbatim feedback text (chat message, review comment, commit note).
 - `.agent-os/review-feedback-log.md` (existing entries, for repeat detection).
-- `.agent-os/learned-rules.md` (existing active/candidate rules, for conflict detection).
+- `.agent-os/learned-rules.md` (existing active/candidate rules, for conflict detection) — and `.agent-os/rules/*.md` if `.agent-os/rules/` exists, since active rules live there once split.
 
 ## Procedure
 
 1. Record the feedback **verbatim** in `.agent-os/review-feedback-log.md` with a timestamp and the task context it occurred in. Do not paraphrase or soften it at this stage.
 2. Classify it into exactly one of the seven categories: `convention`, `architecture`, `testing`, `security`, `workflow`, `communication`, `forbidden-action`.
-3. Search `learned-rules.md` and `review-feedback-log.md` for overlap:
+3. Search `learned-rules.md` and `review-feedback-log.md` for overlap — and, if `.agent-os/rules/` exists, also search `.agent-os/rules/*.md`, since that is where active rules actually live once split:
    - If it matches an existing candidate rule's substance, treat this as a second occurrence.
    - If it contradicts an existing active rule, do not silently overwrite it — surface the conflict explicitly to the user and ask which should hold, or record both with the conflict noted.
 4. If this is the **first** time this specific feedback has appeared, write a **candidate** rule.

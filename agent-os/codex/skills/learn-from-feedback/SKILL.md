@@ -15,8 +15,10 @@ this file is a compact Codex-facing pointer, not a replacement.
 2. Classify it into one category: convention, architecture, testing,
    security, workflow, communication, or forbidden-action.
 3. Check whether it conflicts with an existing rule in
-   `.agent-os/learned-rules.md`; if so, surface the conflict rather than
-   silently overwriting the older rule.
+   `.agent-os/learned-rules.md` — and, if `.agent-os/rules/` exists, in
+   `.agent-os/rules/*.md`, where active rules actually live once split;
+   if so, surface the conflict rather than silently overwriting the
+   older rule.
 4. Apply the promotion rule: a single occurrence stays `Status: candidate`;
    the same lesson observed 2 or more times independently is promoted to
    `Status: active` in `.agent-os/learned-rules.md` — or, if `.agent-os/rules/`

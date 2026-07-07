@@ -17,7 +17,7 @@ Add new behavior to a codebase in a way that fits how the project already works,
 - The feature request and its stated goal.
 - `.agent-os/project-profile.md` for stack and conventions.
 - `.agent-os/architecture-map.md` and `.agent-os/risk-map.md` for boundaries and dangerous areas.
-- `.agent-os/learned-rules.md` for anything already known that constrains this kind of change.
+- `.agent-os/learned-rules.md` for anything already known that constrains this kind of change — and, if `.agent-os/rules/` exists, `.agent-os/rules/*.md` too (the active rules moved out of `learned-rules.md`, equally binding).
 - `.agent-os/command-map.md` for real verification commands.
 
 ## Procedure

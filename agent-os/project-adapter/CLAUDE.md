@@ -23,7 +23,10 @@ first; not repeated here.
 1. `.agent-os/project-profile.md`, `.agent-os/command-map.md`,
    `.agent-os/risk-map.md`.
 2. `.agent-os/learned-rules.md` — honor every `Status: active` rule.
-   `Status: candidate` rules are observations only, not yet binding.
+   `Status: candidate` rules are observations only, not yet binding. If
+   `.agent-os/rules/` exists, active rule bodies live in
+   `.agent-os/rules/*.md` — follow the `Active rules index` in
+   `learned-rules.md` and read those files too; they are just as binding.
 
 ## Safety (non-negotiable)
 

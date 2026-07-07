@@ -9,7 +9,7 @@ This file is intentionally short. Detailed procedures live in `skills/`. Project
 - Read the files you are about to change, and the files that depend on them.
 - Look for an existing pattern in the codebase before inventing a new one.
 - Check `git status` so you know what state you are starting from.
-- If the project has `.agent-os/`, read `project-profile.md`, `command-map.md`, `learned-rules.md`, and `risk-map.md` first.
+- If the project has `.agent-os/`, read `project-profile.md`, `command-map.md`, `learned-rules.md`, and `risk-map.md` first. If `.agent-os/rules/` exists, also read the active rule files that `learned-rules.md`'s `Active rules index` points to — they are just as binding.
 
 ## While you work
 

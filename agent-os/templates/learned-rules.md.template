@@ -23,7 +23,10 @@ roughly 10 active rules or 300 lines, run `scripts/split-learned-rules.sh
 `.agent-os/rules/<scope>.md` (global/project/directory/file-pattern, by
 each rule's Scope field). This file then keeps an "## Active rules index"
 pointing at the moved rules; candidate and deprecated rules always stay
-here.
+here. After a split, `.agent-os/rules/*.md` is part of this file's active
+rules, not a separate concern: agents must read those files too — the
+index entries are pointers to binding rule bodies, equally binding as if
+they were still listed here.
 
 Rule format (do not deviate):
 

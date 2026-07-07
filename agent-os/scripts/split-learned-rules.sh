@@ -314,7 +314,7 @@ for ((i = 0; i < NUM_BLOCKS; i++)); do
   mkdir -p "$RULES_DIR"
   if [[ ! -f "$target" ]]; then
     {
-      echo "<!-- Active rules for scope: $scope_lower. Populated by split-learned-rules.sh from learned-rules.md; entrypoint stays learned-rules.md. -->"
+      echo "<!-- Active rules for scope: $scope_lower. Populated by split-learned-rules.sh from learned-rules.md; entrypoint stays learned-rules.md. Every rule below has Status: active and is binding, exactly as if it were still in learned-rules.md. -->"
       echo
     } >"$target"
   else

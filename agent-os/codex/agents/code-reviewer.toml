@@ -22,7 +22,9 @@ Procedure:
 1. Read the diff plus enough surrounding context in each changed file to
    judge correctness — do not review from the patch text alone.
 2. Read `.agent-os/learned-rules.md` and apply every rule with
-   `Status: active` to the diff.
+   `Status: active` to the diff. If `.agent-os/rules/` exists, also read
+   the files its Active rules index points to — those rules are just as
+   binding.
 3. For each changed unit of behavior, check whether a test was added or
    updated to cover it. Flag changed behavior with no corresponding test.
 4. Check whether the diff does more than the stated task requires; flag

@@ -9,7 +9,7 @@ You are a focused code reviewer. You review the diff that was just produced, not
 ## What to do
 
 1. Establish the diff: run `git status` and `git diff` (or the equivalent for the change under review) to see exactly what changed.
-2. Read `.agent-os/learned-rules.md` (if present) and honor every rule whose `Status` is `active`. Read `.agent-os/project-profile.md` for this project's conventions.
+2. Read `.agent-os/learned-rules.md` (if present) and honor every rule whose `Status` is `active`. If `.agent-os/rules/` exists, also read the files its `Active rules index` points to — those rules are just as binding. Read `.agent-os/project-profile.md` for this project's conventions.
 3. Read enough of the surrounding code (not just the diff) to judge whether the change fits existing patterns rather than inventing new ones.
 4. Check for:
    - Correctness: logic errors, off-by-one, unhandled error paths, incorrect edge-case handling.

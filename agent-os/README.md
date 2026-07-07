@@ -147,7 +147,7 @@ CLAUDE.md、skills、learned-rules.md 等が増えすぎて読みにくくなっ
 - 古くなった・使われなくなったルールを `deprecated` として整理する（削除ではなくマーク）。
 - 数行を超える手順が常時読み込みファイル（CLAUDE.md / AGENTS.md）に紛れ込んでいたら、`skills/` へ移動し、元の場所には一行のポインタだけを残す。
 
-`learned-rules.md` 自体が肥大化した場合（目安: active なルールが10件を超える、またはファイルが300行を超える）は、`scripts/split-learned-rules.sh` で `Status: active` のルールをスコープ別ファイル（`.agent-os/rules/global.md` / `project.md` / `directory.md` / `file-pattern.md`、各ルールの `Scope:` フィールドに従う）へ分割できます。`learned-rules.md` には各ルールへのポインタとなる `## Active rules index` が残り、candidate・deprecated のルールは常に `learned-rules.md` に残ります。
+`learned-rules.md` 自体が肥大化した場合（目安: active なルールが10件を超える、またはファイルが300行を超える）は、`scripts/split-learned-rules.sh` で `Status: active` のルールをスコープ別ファイル（`.agent-os/rules/global.md` / `project.md` / `directory.md` / `file-pattern.md`、各ルールの `Scope:` フィールドに従う）へ分割できます。`learned-rules.md` には各ルールへのポインタとなる `## Active rules index` が残り、candidate・deprecated のルールは常に `learned-rules.md` に残ります。分割後は、`CLAUDE.md` / `AGENTS.md` などの常時読み込みチェックリストや各 skill・subagent も、`## Active rules index` が指す `.agent-os/rules/*.md` を読むよう指示されます。分割前と同じく `Status: active` のルールとして拘束力を持つため、`learned-rules.md` だけを読んで分割済みのルールを見落とすことはありません。
 
 ```bash
 # 移動計画だけを確認する（ファイルは変更しない）

@@ -18,7 +18,7 @@ Principles come from the Global Agent OS (`GLOBAL_AGENTS.md`, `GLOBAL_CLAUDE.md`
 If `.agent-os/` exists in this project, read before making any change:
 - `.agent-os/project-profile.md` — observed facts about stack, structure, conventions.
 - `.agent-os/command-map.md` — the only commands you may run to verify work.
-- `.agent-os/learned-rules.md` — honor every rule whose `Status:` is `active`; `candidate` rules are observations only.
+- `.agent-os/learned-rules.md` — honor every rule whose `Status:` is `active`; `candidate` rules are observations only. If `.agent-os/rules/` exists, follow its `Active rules index` and read `.agent-os/rules/*.md` too — those rules are just as binding.
 - `.agent-os/risk-map.md` — areas that need extra care or explicit approval before touching.
 
 ## Use skills for procedures

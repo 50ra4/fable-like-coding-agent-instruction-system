@@ -16,7 +16,7 @@ Verify, with real task execution rather than inspection alone, that the accumula
 ## Inputs
 
 - `.agent-os/evals.md` (the eval catalog for this project).
-- `.agent-os/learned-rules.md`, `.agent-os/failure-log.md` (what should be applied/avoided).
+- `.agent-os/learned-rules.md`, `.agent-os/failure-log.md` (what should be applied/avoided). If `.agent-os/rules/` exists, also `.agent-os/rules/*.md` — the active rules moved out of `learned-rules.md`, equally binding for the Learning check.
 - `.agent-os/command-map.md` (real verification commands).
 
 ## Eval perspectives to cover

@@ -20,7 +20,8 @@ this file is a compact Codex-facing pointer, not a replacement.
 5. Check destructive-operation risk against `risk-map.md`'s approval
    requirements.
 6. Cross-reference `learned-rules.md` entries with `Status: active`
-   matching the changed paths.
+   matching the changed paths. If `.agent-os/rules/` exists, also check
+   the files its `Active rules index` points to — equally binding.
 7. Confirm the project's real test/lint/typecheck commands were actually
    run and passed — never approve on "looks fine."
 8. Write findings ordered by severity as `file:line` — problem — why it

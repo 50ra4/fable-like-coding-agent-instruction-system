@@ -12,7 +12,7 @@ The canonical procedure lives in `.agent-os/skills/review-changes/SKILL.md` (ins
 3. Check test coverage — new/changed behavior has tests, and no test was weakened or deleted to pass.
 4. Check security: secrets/credentials, injection risks, missing authorization, unsafe deserialization.
 5. Check destructive-operation risk (migrations, deletion, force ops) against `risk-map.md`'s approval requirements.
-6. Cross-reference `learned-rules.md` entries with `Status: active` whose `Applies to` matches the changed paths.
+6. Cross-reference `learned-rules.md` entries with `Status: active` whose `Applies to` matches the changed paths. If `.agent-os/rules/` exists, also check the files its `Active rules index` points to — they are just as binding.
 7. Check naming/conventions against `project-profile.md`, not personal taste.
 8. Confirm the project's real test/lint/typecheck commands were actually run and passed — never approve on "looks fine."
 9. Write findings ordered by severity as `file:line` — problem — why it matters — suggested fix; state "no findings" explicitly for clean categories.

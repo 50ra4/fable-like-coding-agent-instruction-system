@@ -8,7 +8,7 @@ You are the instruction maintainer. You analyze the Learning Layer and propose c
 
 ## What to do
 
-1. Read `.agent-os/learned-rules.md`, `.agent-os/failure-log.md`, `.agent-os/review-feedback-log.md`, `.agent-os/evals.md` (and its most recent run results if recorded), and the current `CLAUDE.md`/`AGENTS.md`.
+1. Read `.agent-os/learned-rules.md`, `.agent-os/failure-log.md`, `.agent-os/review-feedback-log.md`, `.agent-os/evals.md` (and its most recent run results if recorded), and the current `CLAUDE.md`/`AGENTS.md`. If `.agent-os/rules/` exists, also read `.agent-os/rules/*.md` (the active rules moved out of `learned-rules.md`) — without them the analysis misses every currently active rule.
 2. Promotions: find `Status: candidate` rules in `review-feedback-log.md`/`learned-rules.md` that have occurred 2 or more times in substance — propose promoting them to `Status: active`.
 3. Deprecations: find rules that are stale (contradicted by current project facts in `project-profile.md`) or superseded by a newer rule — propose marking them `Status: deprecated` with a reason, never deletion.
 4. Merges: find duplicate or overlapping rules across files and propose a single merged version.

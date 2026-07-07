@@ -17,7 +17,7 @@ Fix bugs in a way that actually resolves the cause, is checkable by someone else
 - The bug report or failing test/output.
 - `.agent-os/command-map.md` for real test/lint/typecheck commands.
 - `.agent-os/risk-map.md` and `.agent-os/architecture-map.md` for danger areas and boundaries.
-- `.agent-os/learned-rules.md` for anything already known about this area of the code.
+- `.agent-os/learned-rules.md` for anything already known about this area of the code — and, if `.agent-os/rules/` exists, `.agent-os/rules/*.md` too (the active rules moved out of `learned-rules.md`, equally binding).
 
 ## Procedure
 

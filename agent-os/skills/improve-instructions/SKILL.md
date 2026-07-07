@@ -17,6 +17,7 @@ Keep the accumulated knowledge in `.agent-os/` coherent as it grows. Rules and f
 ## Inputs
 
 - `.agent-os/learned-rules.md`
+- `.agent-os/rules/*.md`, if `.agent-os/rules/` exists (the active rules moved out of `learned-rules.md`; equally binding)
 - `.agent-os/failure-log.md`
 - `.agent-os/review-feedback-log.md`
 - `.agent-os/evals.md` and recent eval run results
@@ -25,7 +26,7 @@ Keep the accumulated knowledge in `.agent-os/` coherent as it grows. Rules and f
 
 ## Procedure
 
-1. Read all of `learned-rules.md`, `failure-log.md`, and recent eval results.
+1. Read all of `learned-rules.md`, `failure-log.md`, and recent eval results — and, if `.agent-os/rules/` exists, all of `.agent-os/rules/*.md` too, since that is where the active rules actually live once split.
 2. Merge duplicate rules: same substance, different wording — keep the clearer wording, keep the stronger evidence trail, note the merge.
 3. Detect conflicting rules — rules whose instructions contradict each other on the same scope. Run `scripts/detect-rule-conflicts.sh` if it exists; otherwise do this by manual comparison of `Applies to` and `Rule` fields.
 4. Deprecate stale rules: set `Status: deprecated` (never delete outright) for rules whose `Applies to` no longer exists, or that are superseded by a merged/newer rule. Keep the rationale for why it was deprecated.

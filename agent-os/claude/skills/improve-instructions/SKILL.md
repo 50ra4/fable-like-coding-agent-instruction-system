@@ -7,7 +7,7 @@ The canonical procedure lives in `.agent-os/skills/improve-instructions/SKILL.md
 
 ## Procedure summary
 
-1. Read `.agent-os/learned-rules.md`, `review-feedback-log.md`, `failure-log.md`, `evals.md`, and the current `CLAUDE.md`/`AGENTS.md`.
+1. Read `.agent-os/learned-rules.md`, `review-feedback-log.md`, `failure-log.md`, `evals.md`, and the current `CLAUDE.md`/`AGENTS.md`. If `.agent-os/rules/` exists, also read `.agent-os/rules/*.md` — those active rules were moved out of `learned-rules.md` and are just as binding.
 2. Merge duplicate or overlapping rules into one.
 3. Detect conflicting rules (e.g. via `scripts/detect-rule-conflicts.sh` if present) and surface them rather than silently picking a winner.
 4. Mark stale or superseded rules `Status: deprecated` with a reason — never delete a rule outright.

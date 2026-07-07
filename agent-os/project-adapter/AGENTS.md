@@ -16,7 +16,10 @@ installed alongside this project. Read it first; not repeated here.
 2. `.agent-os/command-map.md` — the only commands you may run to verify work.
 3. `.agent-os/risk-map.md` — areas needing explicit approval before touching.
 4. `.agent-os/learned-rules.md` — honor every `Status: active` rule.
-   `Status: candidate` rules are observations only, not yet binding.
+   `Status: candidate` rules are observations only, not yet binding. If
+   `.agent-os/rules/` exists, active rule bodies live in
+   `.agent-os/rules/*.md` — follow the `Active rules index` in
+   `learned-rules.md` and read those files too; they are just as binding.
 
 ## Safety (non-negotiable)
 

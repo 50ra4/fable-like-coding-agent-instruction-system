@@ -25,6 +25,9 @@ and are not restated. Read them first if you have not already.
 - Read `.agent-os/learned-rules.md` before making changes.
 - Honor every rule whose `Status:` is `active`. `Status: candidate` rules
   are observations, not yet binding.
+- If `.agent-os/rules/` exists, active rule bodies live in `.agent-os/rules/*.md`
+  — follow the `Active rules index` in `learned-rules.md` and read those
+  files too; they are just as binding.
 - If corrected during this session, record it in
   `.agent-os/review-feedback-log.md` (2+ occurrences promotes to active).
 

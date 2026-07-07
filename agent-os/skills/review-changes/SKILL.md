@@ -15,7 +15,7 @@ Give a diff a structured, honest review instead of a vague pass/fail impression 
 ## Inputs
 
 - The diff itself (`git diff`, PR diff, or equivalent).
-- `.agent-os/learned-rules.md` (active rules only for enforcement; candidates are informative, not enforceable).
+- `.agent-os/learned-rules.md` (active rules only for enforcement; candidates are informative, not enforceable). If `.agent-os/rules/` exists, the active rule bodies live in `.agent-os/rules/*.md` instead — follow the `Active rules index` in `learned-rules.md` and read those files too; they are just as binding.
 - `.agent-os/architecture-map.md`, `.agent-os/risk-map.md`.
 - `.agent-os/project-profile.md` for naming/conventions.
 - `.agent-os/command-map.md` for what "passing checks" actually means here.
@@ -29,7 +29,7 @@ Give a diff a structured, honest review instead of a vague pass/fail impression 
 5. Check **test coverage**: does new/changed behavior have corresponding new/updated tests; were any tests weakened or deleted to make the suite pass.
 6. Check **security**: secrets or credentials introduced or logged, injection risks (SQL, command, template), missing authorization checks, unsafe deserialization.
 7. Check **destructive-operation risk**: migrations, data deletion, force operations, production config changes — confirm they have the required approval per `risk-map.md`.
-8. Check **consistency with active learned rules**: cross-reference `learned-rules.md` entries with `Status: active` whose `Applies to` matches the changed paths.
+8. Check **consistency with active learned rules**: cross-reference `learned-rules.md` entries with `Status: active` whose `Applies to` matches the changed paths — and, if `.agent-os/rules/` exists, the entries in `.agent-os/rules/*.md` that `learned-rules.md`'s `Active rules index` points to.
 9. Check **naming/conventions**: compare against `project-profile.md`'s documented conventions, not personal taste.
 10. Confirm the project's real test/lint/typecheck commands (from `command-map.md`) were actually run and passed — do not approve on the basis of "looks fine."
 11. Write findings ordered by severity; each finding states the problem, why it matters, the file:line, and a suggested fix. If there are no findings in a category, say so explicitly rather than omitting it.

@@ -133,6 +133,7 @@ bash agent-os/scripts/validate-agent-os.sh --adapter "$TARGET"
 - （デフォルト）`agent-os/` リポジトリ自体に必須ファイルがすべて存在し、常時読み込みファイルが肥大化していないか。
 - （`--adapter` 指定時）`<TARGET>/.agent-os/` 配下に必須の8ファイル（`project-profile.md`、`learned-rules.md`、`failure-log.md`、`review-feedback-log.md`、`evals.md`、`command-map.md`、`architecture-map.md`、`risk-map.md`）と `GLOBAL_AGENTS.md` が存在するか。
 - （`--adapter` 指定時）`learned-rules.md` の `Status:` の値が `candidate` / `active` / `deprecated` のいずれかになっているか。
+- （`--adapter` 指定時、`.agent-os/rules/` が存在する場合）`scripts/split-learned-rules.sh` で分割済みのスコープ別ファイル（`global.md` / `project.md` / `directory.md` / `file-pattern.md`）についても同様に `Status:` の値をチェックします。分割後は `learned-rules.md` の `## Active rules index` がこれらのファイルを指し、CLAUDE.md/AGENTS.md や各 skill・subagent はそこも読む前提になっているため、この検証は分割前後どちらのレイアウトでも同じように機能します。
 
 検証がすべて成功したら、通常のコーディングタスクを依頼して問題ありません。エラーが出た場合は、該当するコピー手順またはスキルの実行をやり直してください。
 

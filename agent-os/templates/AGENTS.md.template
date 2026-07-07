@@ -19,6 +19,9 @@ Read them first if you have not already.
 - Read `.agent-os/learned-rules.md` before making changes.
 - Honor every rule whose `Status:` is `active`. Rules with `Status: candidate`
   are observations, not yet binding — do not treat them as settled.
+- If `.agent-os/rules/` exists, active rule bodies live in `.agent-os/rules/*.md`
+  — follow the `Active rules index` in `learned-rules.md` and read those
+  files too; they are just as binding.
 - If you are corrected during this session, record it in
   `.agent-os/review-feedback-log.md` (see `GLOBAL_AGENTS.md` for the
   promotion rule: 2+ occurrences promotes a candidate to active).
