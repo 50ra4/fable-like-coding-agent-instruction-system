@@ -135,10 +135,45 @@ parse_rules() {
   # rules file still parses correctly (name/status/scope exact-match
   # comparisons below would otherwise carry a trailing \r and never match).
   awk '
-    { sub(/\r$/, "") }
-    /<!--/ { in_comment = 1 }
-    !in_comment { print }
-    /-->/ { in_comment = 0 }
+    {
+      sub(/\r$/, "")
+      # Span-aware HTML comment strip: iteratively remove "<!-- ... -->"
+      # spans from the line so a same-line open+close (e.g. "<!-- note
+      # --> ## Rule: Bravo") does not swallow trailing real content the
+      # way a simple line-based in_comment toggle would. Text before an
+      # unclosed "<!--" is kept and in_comment carries into the next
+      # line; while in_comment, text up to a closing "-->" is dropped
+      # and the remainder of the line is processed normally.
+      line = $0; out = ""; trimmed = 0
+      while (length(line) > 0) {
+        if (in_comment) {
+          p = index(line, "-->")
+          if (p == 0) {
+            line = ""
+          } else {
+            line = substr(line, p + 3)
+            in_comment = 0
+            if (out == "") trimmed = 1
+          }
+        } else {
+          p = index(line, "<!--")
+          if (p == 0) {
+            out = out line
+            line = ""
+          } else {
+            out = out substr(line, 1, p - 1)
+            line = substr(line, p + 4)
+            in_comment = 1
+          }
+        }
+      }
+      # A comment that prefixed a heading/field on this line can leave
+      # leading whitespace in `out`; strip it (only when it was actually
+      # introduced by a stripped leading comment span) so the downstream
+      # parser'"'"'s "^## " / "^Status:" / etc. anchors still match.
+      if (trimmed) sub(/^[ \t]+/, "", out)
+      print out
+    }
   ' "$file" | awk -v source_label="$source_label" '
     function flush_block() {
       print "RULE_START"

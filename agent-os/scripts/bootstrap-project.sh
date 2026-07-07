@@ -410,6 +410,40 @@ apply_project_name() {
   rm -f "$file.bak"
 }
 
+# Apply {{PROJECT_NAME}} substitution to whichever of the 8 adapter state
+# files under <target>/.agent-os/ were FRESHLY installed by the
+# copy_dir_contents call just above (never one that already existed --
+# PROTECTED/skipped files are never rewritten, so a rerun with --force
+# after hand-editing learned-rules.md, for instance, leaves it intact).
+# copy_file() only appends a destination path to INSTALLED_LIST when it
+# actually just copied a new file there (LAST_ACTION="installed"); a
+# protected file that already existed is recorded as "protected" or
+# "skipped" instead and never lands in INSTALLED_LIST, which is exactly
+# the distinction this needs.
+apply_project_name_to_fresh_adapter_state_files() {
+  local f dest item found
+  for f in "${ADAPTER_STATE_FILES[@]}"; do
+    dest="$TARGET_ABS/.agent-os/$f.md"
+    found=0
+    for item in "${INSTALLED_LIST[@]:-}"; do
+      if [[ "$item" == "$dest" ]]; then
+        found=1
+        break
+      fi
+    done
+    if [[ "$found" -eq 1 ]]; then
+      apply_project_name "$dest"
+    fi
+  done
+  # Explicit success return: this function is invoked as a bare statement
+  # (not inside an if/&&), and under `set -e` a function's own exit
+  # status is whatever its last executed command returned -- without
+  # this, a run where the final ADAPTER_STATE_FILES entry was NOT freshly
+  # installed would end on a false `[[ ... ]]` test (from the last loop
+  # iteration) and abort the whole script.
+  return 0
+}
+
 VENDORED=0
 vendor_canonical_skills() {
   [[ "$VENDORED" -eq 1 ]] && return
@@ -584,6 +618,7 @@ fi
 
 # ---- 1. Core project-adapter .agent-os/ files (protected state) ------
 copy_dir_contents "$AGENT_OS_ROOT/project-adapter/.agent-os" "$TARGET_ABS/.agent-os" 1
+apply_project_name_to_fresh_adapter_state_files
 
 # ---- 1b. Global principle files (OS-owned, always vendored) ----------
 copy_file "$AGENT_OS_ROOT/GLOBAL_AGENTS.md" "$TARGET_ABS/.agent-os/GLOBAL_AGENTS.md"

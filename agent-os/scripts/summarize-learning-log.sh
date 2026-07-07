@@ -90,10 +90,46 @@ FS_SEP=$'\x1f'
 strip_html_comments() {
   local file="$1"
   awk '
-    { sub(/\r$/, "") }
-    /<!--/ { in_comment = 1 }
-    !in_comment { print }
-    /-->/ { in_comment = 0 }
+    {
+      sub(/\r$/, "")
+      # Span-aware HTML comment strip: iteratively remove "<!-- ... -->"
+      # spans from the line so a same-line open+close (e.g. "<!-- note
+      # --> ## Second entry") does not swallow trailing real content the
+      # way a simple line-based in_comment toggle would. Text before an
+      # unclosed "<!--" is kept and in_comment carries into the next
+      # line; while in_comment, text up to a closing "-->" is dropped and
+      # the remainder of the line is processed normally.
+      line = $0; out = ""; trimmed = 0
+      while (length(line) > 0) {
+        if (in_comment) {
+          p = index(line, "-->")
+          if (p == 0) {
+            line = ""
+          } else {
+            line = substr(line, p + 3)
+            in_comment = 0
+            if (out == "") trimmed = 1
+          }
+        } else {
+          p = index(line, "<!--")
+          if (p == 0) {
+            out = out line
+            line = ""
+          } else {
+            out = out substr(line, 1, p - 1)
+            line = substr(line, p + 4)
+            in_comment = 1
+          }
+        }
+      }
+      # A comment that prefixed a heading/field on this line can leave
+      # leading whitespace in `out`; strip it (only when actually
+      # introduced by a stripped leading comment span, so genuinely
+      # indented content elsewhere is untouched) so the "^## " anchor in
+      # extract_entries below still matches.
+      if (trimmed) sub(/^[ \t]+/, "", out)
+      print out
+    }
   ' "$file"
 }
 

@@ -27,7 +27,27 @@ Modes (exactly one required):
   --check <name>         Extract and display the Validation command(s).
                           Add --exec to actually run them, gated by
                           .agent-os/command-map.md (a command is only run
-                          if it appears verbatim in the command map).
+                          if it appears, after normalization, in the
+                          command map). Recognized command-map formats:
+                          a backtick span anywhere in the file (e.g.
+                          `npm test`), or the first cell of a markdown
+                          table data row (header/separator rows are
+                          skipped). Normalization strips exactly one
+                          layer of surrounding backticks (and
+                          surrounding whitespace) from both the eval's
+                          Validation command and each command-map
+                          candidate before comparing, so `npm test` and
+                          npm test are treated as the same command; the
+                          normalized (backtick-free) string is what
+                          actually gets executed. A Validation command
+                          is treated as a manual placeholder -- reported
+                          MANUAL, never gated or run -- only if, after
+                          normalization, it case-insensitively equals
+                          "manual" or "manual review", or starts with
+                          "manual " or "manual:"; a command that merely
+                          contains the word "manual" elsewhere (e.g.
+                          manual_regression_suite.sh --check) is not a
+                          placeholder and is gated/run normally.
                           Executed commands run with the adapter root
                           (--adapter <dir>, resolved to an absolute path)
                           as their working directory, not the caller's cwd.
@@ -178,25 +198,65 @@ trim() {
   printf '%s' "$s"
 }
 
-# Extract exact-match candidate command strings from a (comment-stripped)
+# Strip exactly one layer of backticks fully surrounding a string, if
+# present (i.e. "`npm test`" -> "npm test"; "npm test" is left as-is).
+# Does not touch backticks that are not both a leading and a trailing
+# character of the whole string.
+strip_backtick_wrap() {
+  local s="$1"
+  if [[ "${#s}" -ge 2 && "${s:0:1}" == '`' && "${s: -1}" == '`' ]]; then
+    s="${s:1:${#s}-2}"
+  fi
+  printf '%s' "$s"
+}
+
+# Normalize a command string for gate comparison and execution: trim
+# whitespace, strip one layer of surrounding backticks, then trim again
+# (covers "` npm test `" style spacing inside the backticks). Applied
+# uniformly to both command-map candidates and eval Validation commands
+# so a command written `npm test` in one place and npm test (no
+# backticks) in the other still compare equal -- and so the string that
+# is actually executed is always backtick-free (never handed to `bash
+# -c` with literal backticks, which would trigger command substitution).
+normalize_cmd() {
+  local s
+  s="$(trim "$1")"
+  s="$(strip_backtick_wrap "$s")"
+  s="$(trim "$s")"
+  printf '%s' "$s"
+}
+
+# Extract candidate command strings from a (comment-stripped)
 # command-map.md. Two sources, both emitted one candidate per line:
-#   (a) every backtick-delimited span (how commands are quoted in the
-#       command-map table, e.g. `npm test -- --grep widgets`)
-#   (b) every line trimmed of leading "-"/"|"/whitespace and trailing
-#       table pipes/whitespace (covers plain bullet-style entries)
-# The validation command must equal one of these candidates EXACTLY
-# (after trimming) -- a containment/substring match is not enough, since
-# a shorter command being a substring of a longer verified one does not
-# mean the shorter command itself was ever verified.
+#   (a) every backtick-delimited span, anywhere in the file (how
+#       commands are quoted in the documented command-map table, e.g.
+#       `npm test -- --grep widgets`, and also how they may appear
+#       inline in prose)
+#   (b) the first cell of every real markdown table data row (a line
+#       starting with "|"): header rows (first cell "Command", any
+#       case) and separator rows (first cell made up only of "-", ":",
+#       and whitespace) are skipped
+# A bare prose/bullet line (not a backtick span, not a table row) is
+# deliberately NOT a candidate on its own -- e.g. a line under a
+# "do not run" heading must not become an approved command just because
+# it was comment-stripped and trimmed of a leading "-". Candidates are
+# normalized (normalize_cmd) by the caller before comparing; the
+# Validation command must match one of them EXACTLY after normalization
+# -- a containment/substring match is not enough, since a shorter
+# command being a substring of a longer verified one does not mean the
+# shorter command itself was ever verified.
 command_map_candidates() {
   local content="$1"
   grep -oE '`[^`]+`' <<<"$content" 2>/dev/null | sed -E 's/^`//; s/`$//'
-  sed -E '
-    s/^[[:space:]]+//
-    s/^[-|][[:space:]]*//
-    s/[[:space:]]+$//
-    s/\|+[[:space:]]*$//
-    s/[[:space:]]+$//
+  awk -F'|' '
+    /^[[:space:]]*\|/ {
+      cell = $2
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", cell)
+      if (cell == "") next
+      if (cell ~ /^[-: ]+$/) next
+      if (tolower(cell) == "command") next
+      print cell
+    }
   ' <<<"$content"
 }
 
@@ -209,10 +269,46 @@ strip_html_comments() {
   # otherwise silently carry a trailing \r and never match).
   local file="$1"
   awk '
-    { sub(/\r$/, "") }
-    /<!--/ { in_comment = 1 }
-    !in_comment { print }
-    /-->/ { in_comment = 0 }
+    {
+      sub(/\r$/, "")
+      # Span-aware HTML comment strip: iteratively remove "<!-- ... -->"
+      # spans from the line so a same-line open+close (e.g. "<!-- note
+      # --> ## Eval: second") does not swallow trailing real content the
+      # way a simple line-based in_comment toggle would. Text before an
+      # unclosed "<!--" is kept and in_comment carries into the next
+      # line; while in_comment, text up to a closing "-->" is dropped and
+      # the remainder of the line is processed normally.
+      line = $0; out = ""; trimmed = 0
+      while (length(line) > 0) {
+        if (in_comment) {
+          p = index(line, "-->")
+          if (p == 0) {
+            line = ""
+          } else {
+            line = substr(line, p + 3)
+            in_comment = 0
+            if (out == "") trimmed = 1
+          }
+        } else {
+          p = index(line, "<!--")
+          if (p == 0) {
+            out = out line
+            line = ""
+          } else {
+            out = out substr(line, 1, p - 1)
+            line = substr(line, p + 4)
+            in_comment = 1
+          }
+        }
+      }
+      # A comment that prefixed a heading/field on this line can leave
+      # leading whitespace in `out`; strip it (only when actually
+      # introduced by a stripped leading comment span, so genuinely
+      # indented content elsewhere is untouched) so the "^## Eval:"
+      # anchor downstream still matches.
+      if (trimmed) sub(/^[ \t]+/, "", out)
+      print out
+    }
   ' "$file"
 }
 
@@ -414,11 +510,12 @@ run_check() {
   fi
 
   # --exec: gate each command against command-map.md before running.
-  # The gate is an EXACT match against candidate command strings extracted
-  # from command-map.md, not a substring/containment check -- a command
-  # that merely happens to be a substring of a longer verified command
-  # (e.g. "npm test" vs. a mapped "npm test -- --grep widgets") was never
-  # itself verified and must not be allowed to run.
+  # The gate is an EXACT match (after normalize_cmd on both sides) against
+  # candidate command strings extracted from command-map.md, not a
+  # substring/containment check -- a command that merely happens to be a
+  # substring of a longer verified command (e.g. "npm test" vs. a mapped
+  # "npm test -- --grep widgets") was never itself verified and must not
+  # be allowed to run.
   local overall_fail=0
   local stripped_map=""
   local map_candidates=""
@@ -427,16 +524,32 @@ run_check() {
     map_candidates="$(command_map_candidates "$stripped_map")"
   fi
 
-  local c lower c_trimmed
+  # Normalize every extracted candidate once, up front, so the per-command
+  # comparison below is a plain exact-line match against already-
+  # normalized candidates.
+  local normalized_candidates="" cand
+  if [[ -n "$map_candidates" ]]; then
+    while IFS= read -r cand; do
+      [[ -z "$cand" ]] && continue
+      normalized_candidates+="$(normalize_cmd "$cand")"$'\n'
+    done <<<"$map_candidates"
+  fi
+
+  local c c_norm lower
   for c in "${commands[@]}"; do
-    lower="$(echo "$c" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$lower" == *manual* ]]; then
+    c_norm="$(normalize_cmd "$c")"
+    lower="$(echo "$c_norm" | tr '[:upper:]' '[:lower:]')"
+
+    # Manual-placeholder gate: word-anchored on the normalized, trimmed
+    # command, not a substring test -- a command merely containing the
+    # word "manual" (e.g. manual_regression_suite.sh --check) is a real,
+    # approved command, not a placeholder for a human-performed check.
+    if [[ "$lower" == "manual" || "$lower" == "manual review" || "$lower" == "manual "* || "$lower" == "manual:"* ]]; then
       echo "MANUAL: $c"
       continue
     fi
 
-    c_trimmed="$(trim "$c")"
-    if [[ -z "$stripped_map" ]] || ! grep -qxF -- "$c_trimmed" <<<"$map_candidates"; then
+    if [[ -z "$stripped_map" ]] || ! grep -qxF -- "$c_norm" <<<"$normalized_candidates"; then
       echo "REFUSED: command does not appear exactly in .agent-os/command-map.md -- run manually after verifying"
       echo "  command: $c"
       overall_fail=1
@@ -444,7 +557,7 @@ run_check() {
     fi
 
     echo "RUN (in $ADAPTER_DIR_ABS): $c"
-    if (cd "$ADAPTER_DIR_ABS" && bash -c "$c"); then
+    if (cd "$ADAPTER_DIR_ABS" && bash -c "$c_norm"); then
       echo "PASS: $c"
     else
       local rc=$?

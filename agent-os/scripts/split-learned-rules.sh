@@ -7,6 +7,11 @@
 # based on each rule's Scope: field. learned-rules.md stays the
 # entrypoint: promotion-criteria header + candidate/deprecated rules +
 # an "## Active rules index" section pointing at the moved rules.
+#
+# A literal "## " line always ends the current markdown block/section
+# for this script's heading-based parsing, even one quoted inside a
+# rule's own body -- see usage() for how the existing-index merge stays
+# minimally destructive around that edge case.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,6 +38,21 @@ A rule already present in its target file is left in place (WARN) --
 it is never appended twice. This script never deletes rule content;
 it only moves verbatim blocks. Safe to rerun: once a rule has been
 moved, later runs find no active blocks left to move.
+
+Existing "## Active rules index" handling: when learned-rules.md already
+has an index section, only unambiguous index bookkeeping is ever removed
+from it when merging in newly-moved entries -- the "## Active rules
+index" heading line itself, blank lines, and lines matching the strict
+"- <name> -> rules/<scope>.md" entry shape (scope one of the four
+recognized scopes). Any other line found in that region (e.g. a
+malformed pointer with an unrecognized scope, or rule content that ended
+up there) is left in place untouched and is never merged into the
+authoritative index. Note: a literal "## " line anywhere in the file --
+including one quoted inside a rule's own Rule:/Rationale: body as an
+example -- always ends the current block/section (plain markdown-style
+heading detection has no way to tell a real heading from quoted text);
+the content that follows such a line stays in learned-rules.md rather
+than being lost, but the "## " line is heading syntax, not rule content.
 
 Symlink safety: refuses to run (non-dry-run) if .agent-os itself is a
 symlink or does not physically resolve inside --adapter <dir>, or if
@@ -114,28 +134,70 @@ find_blocks() {
       # still parses correctly (name/status/scope exact-match comparisons
       # below would otherwise carry a trailing \r and never match).
       sub(/\r$/, "")
-      if ($0 ~ /<!--/) in_comment = 1
-      if (!in_comment) {
-        if ($0 ~ /^## Rule:/) {
-          if (in_block) flush(NR - 1)
-          in_block = 1
-          start = NR
-          name = $0
-          sub(/^## Rule:[ \t]*/, "", name)
-          gsub(/[ \t]+$/, "", name)
-          status = ""; scope = ""
-        } else if (in_block && $0 ~ /^## /) {
-          flush(NR - 1)
-          in_block = 0
-        } else if (in_block) {
-          if ($0 ~ /^Status:/) {
-            status = $0; sub(/^Status:[ \t]*/, "", status); gsub(/[ \t]+$/, "", status)
-          } else if ($0 ~ /^Scope:/) {
-            scope = $0; sub(/^Scope:[ \t]*/, "", scope); gsub(/[ \t]+$/, "", scope)
+
+      # Span-aware HTML comment strip, done inline (not a separate pipe)
+      # so NR stays the real physical line number of the source file --
+      # find_blocks reports start/end as raw line numbers used later to
+      # sed -n a range out of the original file. Iteratively remove
+      # "<!-- ... -->" spans from the line; this handles a same-line
+      # open+close (e.g. "<!-- note --> ## Rule: Bravo") that a simple
+      # line-based in_comment toggle would otherwise swallow whole, as
+      # well as a comment opened on an earlier line and closed on this
+      # one. Text before an unclosed "<!--" is kept and in_comment
+      # carries into the next line; while in_comment, text up to a
+      # closing "-->" is dropped and the remainder of the line (if any)
+      # is processed normally.
+      line = $0; out = ""; trimmed = 0
+      while (length(line) > 0) {
+        if (in_comment) {
+          p = index(line, "-->")
+          if (p == 0) {
+            line = ""
+          } else {
+            line = substr(line, p + 3)
+            in_comment = 0
+            if (out == "") trimmed = 1
+          }
+        } else {
+          p = index(line, "<!--")
+          if (p == 0) {
+            out = out line
+            line = ""
+          } else {
+            out = out substr(line, 1, p - 1)
+            line = substr(line, p + 4)
+            in_comment = 1
           }
         }
       }
-      if ($0 ~ /-->/) in_comment = 0
+      # A comment that prefixed content on this same line (or carried in
+      # from an earlier line and closed here) can leave leading
+      # whitespace in `out` (e.g. "<!-- x --> ## Rule: Y" strips to
+      # " ## Rule: Y"); strip it so the heading/field regexes below,
+      # anchored at line start, still match. Only done when a comment
+      # was actually stripped from the leading edge of the line (the
+      # `trimmed` flag), so genuinely indented content elsewhere is
+      # never touched.
+      if (trimmed) sub(/^[ \t]+/, "", out)
+
+      if (out ~ /^## Rule:/) {
+        if (in_block) flush(NR - 1)
+        in_block = 1
+        start = NR
+        name = out
+        sub(/^## Rule:[ \t]*/, "", name)
+        gsub(/[ \t]+$/, "", name)
+        status = ""; scope = ""
+      } else if (in_block && out ~ /^## /) {
+        flush(NR - 1)
+        in_block = 0
+      } else if (in_block) {
+        if (out ~ /^Status:/) {
+          status = out; sub(/^Status:[ \t]*/, "", status); gsub(/[ \t]+$/, "", status)
+        } else if (out ~ /^Scope:/) {
+          scope = out; sub(/^Scope:[ \t]*/, "", scope); gsub(/[ \t]+$/, "", scope)
+        }
+      }
     }
     END { if (in_block) flush(NR) }
   ' "$1"
@@ -218,7 +280,7 @@ for ((i = 0; i < NUM_BLOCKS; i++)); do
 
   if [[ "$dup" -eq 1 ]]; then
     ACTION[$i]="SKIP_DUP"
-    MSG[$i]="WARN: \"$name\" already present in rules/$scope_lower.md -- left in place"
+    MSG[$i]="WARN: \"$name\" already present in rules/$scope_lower.md -- left in place (bodies are not compared; run detect-rule-conflicts.sh to check for a duplicate-name conflict)"
     SKIPPED=$((SKIPPED + 1))
     WARNCOUNT=$((WARNCOUNT + 1))
     continue
@@ -291,6 +353,7 @@ fi
 # ---- Apply: append moved blocks to their target rules/*.md files -------
 declare -a DEL_START=() DEL_END=()
 declare -a NEW_INDEX_LINES=()
+declare -a NEW_INDEX_NAMES=()
 
 for ((i = 0; i < NUM_BLOCKS; i++)); do
   [[ "${ACTION[$i]}" != "MOVE" ]] && continue
@@ -325,9 +388,28 @@ for ((i = 0; i < NUM_BLOCKS; i++)); do
   DEL_START+=("$start")
   DEL_END+=("$trimmed_end")
   NEW_INDEX_LINES+=("- ${B_NAME[$i]} → rules/${scope_lower}.md")
+  NEW_INDEX_NAMES+=("${B_NAME[$i]}")
 done
 
 # ---- Locate an existing "## Active rules index" section, if any -------
+# Detection stays simple: the first literal "## Active rules index" line
+# in the file, extending to the next "## " heading (or EOF). A literal
+# "## " line always ends the current markdown section for this script's
+# heading-based parsing (find_blocks above works the same way) -- even
+# one quoted inside a rule's own body -- so a rule that itself contains
+# a line reading exactly "## Active rules index" will still be found
+# here and will still end that rule's block early. That is a documented
+# limitation of plain "## "-anchored parsing, not something this script
+# tries to see through (see usage() and the header comment above).
+#
+# What IS handled carefully here: within the located region, only lines
+# that are unambiguously index bookkeeping are ever deleted -- the
+# heading line itself, blank lines, and lines matching the strict
+# "- <name> -> rules/<scope>.md" entry shape (see match_index_line()).
+# Any other line in the region (e.g. a bogus "- fake -> rules/nowhere.md"
+# pointer, or a rule's own Rationale: text that falls in range only
+# because of a stray "## " match) is left exactly where it is: never
+# deleted, never harvested. This script never deletes rule content.
 EXIST_INDEX_START=0
 EXIST_INDEX_END=0
 for ((li = 0; li < TOTAL_LINES; li++)); do
@@ -346,37 +428,79 @@ if [[ "$EXIST_INDEX_START" -gt 0 ]]; then
   done
 fi
 
+ARROW=$'\xe2\x86\x92'  # UTF-8 "→", matches the literal char used above
+
+# Strict index-entry shape: "- <name> -> rules/<scope>.md" where <scope>
+# is exactly one of the four recognized scopes, anchored at the end of
+# the line. This is the ONLY shape ever treated as index bookkeeping --
+# e.g. "- fake -> rules/nowhere.md" (an unrecognized scope) does not
+# match, so it is neither harvested into the merged index nor deleted
+# from the source; it stays in place as ordinary content. On a match,
+# sets MATCH_NAME to the rule name, derived by stripping the strict
+# trailing " -> rules/<scope>.md" suffix -- anchored at the end, not a
+# greedy "everything before the first ' rules/'" glob -- so a rule name
+# that itself contains the substring " rules/" (e.g. "fix rules/foo bug")
+# is not mangled.
+match_index_line() {
+  local content="$1" scope suffix rest
+  MATCH_NAME=""
+  case "$content" in
+    "- "*) ;;
+    *) return 1 ;;
+  esac
+  rest="${content#- }"
+  for scope in global project directory file-pattern; do
+    suffix=" $ARROW rules/$scope.md"
+    if [[ "$rest" == *"$suffix" ]]; then
+      local candidate="${rest%$suffix}"
+      if [[ -n "$candidate" ]]; then
+        MATCH_NAME="$candidate"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
 declare -a EXISTING_INDEX_LINES=()
+declare -a EXISTING_INDEX_NAMES=()
+declare -a EXIST_INDEX_DEL_LINES=()
 if [[ "$EXIST_INDEX_START" -gt 0 ]]; then
   for ((ln = EXIST_INDEX_START; ln <= EXIST_INDEX_END; ln++)); do
     content="${LINES[$((ln - 1))]}"
-    if [[ "$content" == "- "*"rules/"*".md" ]]; then
-      EXISTING_INDEX_LINES+=("$content")
+    if [[ "$ln" -eq "$EXIST_INDEX_START" ]]; then
+      # The heading line itself: always removed.
+      EXIST_INDEX_DEL_LINES+=("$ln")
+      continue
     fi
+    if [[ -z "$content" ]]; then
+      EXIST_INDEX_DEL_LINES+=("$ln")
+      continue
+    fi
+    if match_index_line "$content"; then
+      EXISTING_INDEX_LINES+=("$content")
+      EXISTING_INDEX_NAMES+=("$MATCH_NAME")
+      EXIST_INDEX_DEL_LINES+=("$ln")
+    fi
+    # Anything else: preserved in place, not deleted, not harvested.
   done
 fi
 
 # ---- Merge existing + new index lines, deduped by rule name -----------
-ARROW=$'\xe2\x86\x92'  # UTF-8 "→", matches the literal char used above
 declare -A INDEX_SEEN=()
 declare -a ALL_INDEX_LINES=()
 add_index_line() {
-  local line="$1" rest namepart lname
-  rest="${line#- }"
-  namepart="${rest%% rules/*}"    # "<name> → " (name plus trailing arrow)
-  namepart="${namepart% $ARROW}"  # strip the trailing " →"
-  lname="$(low "$namepart")"
+  local line="$1" name="$2" lname
+  lname="$(low "$name")"
   [[ -n "${INDEX_SEEN[$lname]:-}" ]] && return
   INDEX_SEEN[$lname]=1
   ALL_INDEX_LINES+=("$line")
 }
-for line in "${EXISTING_INDEX_LINES[@]:-}"; do
-  [[ -z "$line" ]] && continue
-  add_index_line "$line"
+for idx in "${!EXISTING_INDEX_LINES[@]}"; do
+  add_index_line "${EXISTING_INDEX_LINES[$idx]}" "${EXISTING_INDEX_NAMES[$idx]}"
 done
-for line in "${NEW_INDEX_LINES[@]:-}"; do
-  [[ -z "$line" ]] && continue
-  add_index_line "$line"
+for idx in "${!NEW_INDEX_LINES[@]}"; do
+  add_index_line "${NEW_INDEX_LINES[$idx]}" "${NEW_INDEX_NAMES[$idx]}"
 done
 
 # ---- Find insertion point: right after "## Active rules" heading ------
@@ -395,11 +519,10 @@ for idx in "${!DEL_START[@]}"; do
   s=${DEL_START[$idx]}; e=${DEL_END[$idx]}
   for ((ln = s; ln <= e; ln++)); do DEL[$((ln - 1))]=1; done
 done
-if [[ "$EXIST_INDEX_START" -gt 0 ]]; then
-  for ((ln = EXIST_INDEX_START; ln <= EXIST_INDEX_END; ln++)); do
-    DEL[$((ln - 1))]=1
-  done
-fi
+for ln in "${EXIST_INDEX_DEL_LINES[@]:-}"; do
+  [[ -z "$ln" ]] && continue
+  DEL[$((ln - 1))]=1
+done
 
 # ---- Rewrite learned-rules.md ------------------------------------------
 # The temp file is created alongside RULES_FILE, i.e. inside AO_DIR,
