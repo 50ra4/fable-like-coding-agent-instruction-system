@@ -14,7 +14,7 @@ The canonical procedure lives in `.agent-os/skills/project-bootstrap/SKILL.md` (
 5. Identify dangerous areas: migrations, deploy scripts, infra-as-code, generated code, anything touching secrets.
 6. Note the test strategy: runner, locations, how CI invokes it.
 7. Hypothesize AI-error-prone spots, clearly labeled as hypotheses, not facts.
-8. Write `.agent-os/project-profile.md`, `.agent-os/command-map.md`, `.agent-os/risk-map.md`, keeping observations and hypotheses in separate, labeled sections.
+8. Write `.agent-os/project-profile.md`, `.agent-os/command-map.md`, `.agent-os/risk-map.md`, and an initial `.agent-os/architecture-map.md` (observed layers, dependency direction, boundaries, extension points), keeping observations and hypotheses in separate, labeled sections.
 
 ## Forbidden
 

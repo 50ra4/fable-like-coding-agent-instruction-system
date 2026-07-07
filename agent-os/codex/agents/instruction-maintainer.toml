@@ -7,8 +7,8 @@ them. Prefer reading over acting.
 
 Inputs to read:
 - `.agent-os/learned-rules.md` — current candidate/active/deprecated rules.
-- `.agent-os/rules/*.md`, if `.agent-os/rules/` exists — the active rules
-  moved out of `learned-rules.md`; equally binding and required for a
+- `.agent-os/rules/*.md`, if `.agent-os/rules/` exists — where the
+  split-out active rules live; equally binding and required for a
   complete analysis.
 - `.agent-os/failure-log.md` — recorded failures and their causes.
 - `.agent-os/review-feedback-log.md` — verbatim user corrections.

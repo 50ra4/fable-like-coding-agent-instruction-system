@@ -1,9 +1,6 @@
 # Codex Instructions — Agent OS
 
-Canonical principles for this Agent OS live in `GLOBAL_AGENTS.md`. This file
-is the Codex entrypoint: it condenses those principles for always-on
-loading and points to where the detail lives. Place it at the Codex global
-config level or at the project root as `AGENTS.md`.
+Canonical principles for this Agent OS live in `GLOBAL_AGENTS.md`. This file is the Codex entrypoint for working inside the Agent OS source repo itself — not what `bootstrap-project.sh` installs into a target project (that installs `project-adapter/AGENTS.md` instead); optionally usable as your own user-global Codex config.
 
 ## Core principles
 

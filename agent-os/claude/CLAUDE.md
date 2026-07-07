@@ -1,6 +1,6 @@
 # Claude Code — Agent OS Entrypoint
 
-Principles come from the Global Agent OS (`GLOBAL_AGENTS.md`, `GLOBAL_CLAUDE.md`). This file is the Claude Code entrypoint that loads every turn — it points, it does not explain.
+Principles come from the Global Agent OS (`GLOBAL_AGENTS.md`, `GLOBAL_CLAUDE.md`). This file is the Claude Code entrypoint for working *inside the Agent OS source repository itself* — it points, it does not explain. It is not installed by `bootstrap-project.sh` into a target project (that installs `project-adapter/CLAUDE.md` instead); treat it as an optional candidate for your own user-global Claude Code config (e.g. `~/.claude/CLAUDE.md`) if you want these repo-authoring conventions loaded everywhere.
 
 ## Core principles
 

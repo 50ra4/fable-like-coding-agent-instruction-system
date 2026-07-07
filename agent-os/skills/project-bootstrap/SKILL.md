@@ -33,13 +33,15 @@ Do not use this skill to make changes. It produces observations only; `adapt-to-
 8. Generate `.agent-os/project-profile.md` (see the `project-profile` skill for section layout).
 9. Generate `.agent-os/command-map.md` — one entry per verified command, each with its evidence source.
 10. Generate `.agent-os/risk-map.md` — dangerous areas from step 5, each with why it is dangerous and what approval is required before touching it.
-11. Record observations and hypotheses in separate, clearly labeled sections. Do not create `learned-rules.md` entries yet — bootstrapping is not the same as learning.
+11. Generate an initial `.agent-os/architecture-map.md` from what was observed in steps 2-6: layers/modules and their responsibilities, allowed dependency directions, boundaries that must not be crossed, and extension points. Observation only, same discipline as everywhere else in this skill — separate confirmed facts from hypotheses, and leave a section empty (not guessed) if nothing was actually observed for it.
+12. Record observations and hypotheses in separate, clearly labeled sections. Do not create `learned-rules.md` entries yet — bootstrapping is not the same as learning.
 
 ## Outputs
 
 - `.agent-os/project-profile.md`
 - `.agent-os/command-map.md`
 - `.agent-os/risk-map.md`
+- `.agent-os/architecture-map.md` — initial pass; `adapt-to-project` refines it as the adapter matures.
 - A short summary to the user: stack, verified commands, top risk areas, open hypotheses.
 
 Read-only inspection commands (`ls`, `cat`, `grep`, `find`, `git status`/
@@ -61,5 +63,6 @@ build/test/state-changing commands, not read-only inspection.
 - Every command in `command-map.md` has a cited source.
 - `project-profile.md` clearly separates observed facts from hypotheses.
 - `risk-map.md` lists concrete paths/areas, not vague categories.
+- `architecture-map.md` reflects actually-observed layering, not an unpopulated scaffold.
 - No file outside `.agent-os/` was modified.
 - The user has a short, accurate summary of what this project is and where the danger is.

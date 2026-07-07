@@ -45,6 +45,8 @@ cp -r agent-os/skills/. "$TARGET/.agent-os/skills/"
 
 コピーした `$TARGET/CLAUDE.md` の中の `{{PROJECT_NAME}}` プレースホルダは、`bootstrap-project.sh` なら自動で置換される箇所です。手動で行った場合は自分でプロジェクト名に置き換えてください（例: `sed -i "s/{{PROJECT_NAME}}/my-project/g" "$TARGET/CLAUDE.md"`）。
 
+（参考）`agent-os/claude/CLAUDE.md` は上記の配置対象には含まれません。これは Agent OS リポジトリ自身の中で作業する際のエントリポイントであり、任意でユーザーのグローバル設定の候補として使うものです。
+
 既に `<TARGET>/CLAUDE.md` が存在する場合は上書きせず、冒頭に1行の参照を追加してください。
 
 ```markdown
@@ -83,6 +85,8 @@ cp -r agent-os/skills/. "$TARGET/.agent-os/skills/"
 ```
 
 コピーした `$TARGET/AGENTS.md` の中の `{{PROJECT_NAME}}` プレースホルダも、手動で行った場合は自分でプロジェクト名に置き換えてください。
+
+（参考）`agent-os/codex/AGENTS.md` は上記の配置対象には含まれません。これは Agent OS リポジトリ自身の中で作業する際のエントリポイントであり、任意でユーザーのグローバル Codex 設定の候補として使うものです。
 
 ## Claude Code と Codex を両方使うプロジェクト
 

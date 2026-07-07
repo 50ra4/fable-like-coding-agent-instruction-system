@@ -11,8 +11,8 @@ this file is a compact Codex-facing pointer, not a replacement.
 ## Summary
 
 1. Merge duplicate rules in `.agent-os/learned-rules.md` — and, if
-   `.agent-os/rules/` exists, in `.agent-os/rules/*.md` too, since active
-   rules live there once split — that describe the same lesson,
+   `.agent-os/rules/` exists, in `.agent-os/rules/*.md` too, where the
+   split-out active rules live — that describe the same lesson,
    preserving the strongest evidence from each.
 2. Detect and report conflicting rules rather than silently picking one.
 3. Deprecate stale or superseded rules by marking `Status: deprecated`

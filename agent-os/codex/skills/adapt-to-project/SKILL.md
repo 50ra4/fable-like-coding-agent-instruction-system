@@ -16,12 +16,15 @@ this file is a compact Codex-facing pointer, not a replacement.
    `.agent-os/risk-map.md`; pull only verified facts, never hypotheses.
 3. Write/update a short `AGENTS.md` at the project root pointing to
    `.agent-os/` and to relevant skills for detail — no long procedures
-   inline. Generate it from the `templates/AGENTS.md.template` shape
-   (structure and required sections, not the vendored placeholder
-   questions themselves), under the same length discipline as the
-   global entrypoint.
+   inline. Match the shape of the project's own installed `AGENTS.md`
+   (a copy of `project-adapter/AGENTS.md` — canonical source:
+   `templates/AGENTS.md.template` in the Agent OS source repo, not
+   present in a bootstrapped project), under the same length discipline
+   as the global entrypoint.
 4. Create `.agent-os/learned-rules.md` and `.agent-os/evals.md` if absent
-   (empty shells, not pre-populated with unverified rules).
+   (empty shells, not pre-populated with unverified rules). Refresh
+   `.agent-os/architecture-map.md` too if it looks stale against current
+   facts.
 5. Every rule placed in the adapter must trace back to an observed fact
    or a repeated failure/feedback item — never a single guess.
 
@@ -30,9 +33,10 @@ this file is a compact Codex-facing pointer, not a replacement.
 - Generate `AGENTS.md` for the Codex entrypoint; only generate files for
   other platforms (e.g. Claude-facing files) if the user separately asks
   for them.
-- Never modify anything under the Global Agent OS root
-  (`GLOBAL_AGENTS.md`, `skills/`, `templates/`, `scripts/`) — the adapter
-  is project-local only.
+- Never modify the vendored Global layer in this project
+  (`.agent-os/GLOBAL_AGENTS.md`, `.agent-os/skills/`) — or, if working
+  directly in the Agent OS source repo, its root `GLOBAL_AGENTS.md`,
+  `skills/`, `templates/`, `scripts/`. The adapter is project-local only.
 
 ## Forbidden
 

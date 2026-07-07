@@ -16,7 +16,7 @@ this file is a compact Codex-facing pointer, not a replacement.
    security, workflow, communication, or forbidden-action.
 3. Check whether it conflicts with an existing rule in
    `.agent-os/learned-rules.md` — and, if `.agent-os/rules/` exists, in
-   `.agent-os/rules/*.md`, where active rules actually live once split;
+   `.agent-os/rules/*.md`, where the split-out active rules live;
    if so, surface the conflict rather than silently overwriting the
    older rule.
 4. Apply the promotion rule: a single occurrence stays `Status: candidate`;

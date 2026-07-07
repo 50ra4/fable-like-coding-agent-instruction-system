@@ -21,7 +21,8 @@ this file is a compact Codex-facing pointer, not a replacement.
 5. Identify risk areas: migrations, deploy scripts, infra-as-code,
    generated code, production config, anything touching secrets.
 6. Generate `.agent-os/project-profile.md`, `.agent-os/command-map.md`,
-   `.agent-os/risk-map.md`.
+   `.agent-os/risk-map.md`, and an initial `.agent-os/architecture-map.md`
+   (observed layers, dependency direction, boundaries, extension points).
 7. Keep observations and hypotheses in clearly separate, labeled sections.
 
 ## Codex-specific notes

@@ -8,8 +8,8 @@ The canonical procedure lives in `.agent-os/skills/adapt-to-project/SKILL.md` (i
 ## Procedure summary
 
 1. Require `project-bootstrap` output to already exist (`project-profile.md`, `command-map.md`, `risk-map.md`). If missing, run `project-bootstrap` first.
-2. Generate a short project-root `CLAUDE.md` (and/or `AGENTS.md`) from the `templates/CLAUDE.md.template` shape: pointers only, no procedures, under the same length discipline as the global entrypoint.
-3. Generate `.agent-os/learned-rules.md` (scaffold, ready to receive rules) and `.agent-os/evals.md` (initial scenarios derived from `risk-map.md` and `command-map.md`).
+2. Generate a short project-root `CLAUDE.md` (and/or `AGENTS.md`) matching the shape of the project's own installed `CLAUDE.md`/`AGENTS.md` (a copy of `project-adapter/CLAUDE.md`/`AGENTS.md` — canonical source: `templates/CLAUDE.md.template` in the Agent OS source repo, not present in a bootstrapped project): pointers only, no procedures, under the same length discipline as the global entrypoint.
+3. Generate `.agent-os/learned-rules.md` (scaffold, ready to receive rules) and `.agent-os/evals.md` (initial scenarios derived from `risk-map.md` and `command-map.md`). Refresh `.agent-os/architecture-map.md` too if it looks stale against current facts.
 4. Write only facts confirmed by bootstrap into the adapter. Anything uncertain stays a hypothesis in `project-profile.md` — never promoted to a rule.
 5. Never modify the Global Layer (`GLOBAL_AGENTS.md`, `GLOBAL_CLAUDE.md`) — it stays project-agnostic and is not restated here.
 

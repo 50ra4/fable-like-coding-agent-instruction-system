@@ -9,7 +9,7 @@ The canonical procedure lives in `.agent-os/skills/learn-from-feedback/SKILL.md`
 
 1. Record the correction verbatim (no paraphrasing, no summarizing) in `.agent-os/review-feedback-log.md`.
 2. Classify it into exactly one category: `convention`, `architecture`, `testing`, `security`, `workflow`, `communication`, `forbidden-action`.
-3. Check whether the same substance already exists in the log or in `learned-rules.md` (and, if `.agent-os/rules/` exists, in `.agent-os/rules/*.md` — that is where active rules actually live once split). If it conflicts with an existing active rule, surface the conflict — do not silently overwrite either side.
+3. Check whether the same substance already exists in the log or in `learned-rules.md` (and, if `.agent-os/rules/` exists, in `.agent-os/rules/*.md` — where the split-out active rules live). If it conflicts with an existing active rule, surface the conflict — do not silently overwrite either side.
 4. Count occurrences of the same substance: 1 occurrence stays `Status: candidate`; 2+ occurrences promotes it to `Status: active` in `.agent-os/learned-rules.md`, using the Rule format (Status/Source/Scope/Applies to/Rule/Rationale/Examples/Validation). If this project uses the split layout (`.agent-os/rules/` exists), put the active rule in `rules/<scope>.md` instead and update the index in `learned-rules.md`.
 5. Never turn a vague or emotional remark ("be more careful") into a rule — only concrete, checkable ones.
 

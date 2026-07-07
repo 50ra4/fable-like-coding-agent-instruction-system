@@ -15,7 +15,7 @@ Give a diff a structured, honest review instead of a vague pass/fail impression 
 ## Inputs
 
 - The diff itself (`git diff`, PR diff, or equivalent).
-- `.agent-os/learned-rules.md` (active rules only for enforcement; candidates are informative, not enforceable). If `.agent-os/rules/` exists, the active rule bodies live in `.agent-os/rules/*.md` instead — follow the `Active rules index` in `learned-rules.md` and read those files too; they are just as binding.
+- `.agent-os/learned-rules.md` (active rules only for enforcement; candidates are informative, not enforceable). If `.agent-os/rules/` exists, also read the files its `Active rules index` points to — equally binding. Active rules with a missing or unrecognized `Scope:` stay directly in `learned-rules.md` and are still binding.
 - `.agent-os/architecture-map.md`, `.agent-os/risk-map.md`.
 - `.agent-os/project-profile.md` for naming/conventions.
 - `.agent-os/command-map.md` for what "passing checks" actually means here.

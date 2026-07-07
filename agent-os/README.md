@@ -200,6 +200,10 @@ agent-os/
     └── split-learned-rules.sh
 ```
 
+## `claude/CLAUDE.md` と `codex/AGENTS.md` は何のためにあるか
+
+`claude/CLAUDE.md` と `codex/AGENTS.md` は、**このリポジトリ（Agent OS の開発元）自身の中で** Claude Code / Codex を使って作業するときのエントリポイントです。`bootstrap-project.sh` はこの2ファイルをどこにもインストールしません — 対象プロジェクトの `CLAUDE.md` / `AGENTS.md` として実際にコピーされるのは `project-adapter/CLAUDE.md` / `project-adapter/AGENTS.md` の方です（前述の各インストール手順を参照）。この2ファイルはそれとは別に、任意でユーザーのグローバル設定（例: `~/.claude/CLAUDE.md` や Codex のグローバル設定）の候補として使うこともできますが、必須ではありません。導入先プロジェクトの成果物と混同しないよう注意してください。
+
 ## 注意: メタプロンプトを Opus / Sonnet / Codex に毎回渡さないこと
 
 このリポジトリ（`agent-os/` 全体、特にこの README のようなメタ文書）は、Fable がこのシステムを生成するための素材です。**日常のコーディングセッションで Opus / Sonnet / Codex に渡してよいのは、生成後の軽量ファイル（`CLAUDE.md` / `AGENTS.md` / `skills/` / `agents/` / `.agent-os/` の中身）だけです。** この生成用メタプロンプト一式を毎回のセッションで読み込ませることは、常時読み込みコストを不必要に増大させ、Agent OS が目指す「軽量な指示システム」という設計原則そのものに反します。
