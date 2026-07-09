@@ -168,7 +168,7 @@ agent-os/
 ├── GLOBAL_CLAUDE.md            # Global Layer: Claude Code 固有の差分
 ├── INSTALL.md                  # 導入手順（日本語）
 ├── templates/                   # 各種テンプレート
-├── skills/                      # 10 の canonical スキル
+├── skills/                      # 11 の canonical スキル
 │   ├── project-bootstrap/
 │   ├── project-profile/
 │   ├── adapt-to-project/
@@ -178,6 +178,7 @@ agent-os/
 │   ├── run-agent-evals/
 │   ├── fix-bug-safely/
 │   ├── implement-feature-safely/
+│   ├── context-checkpoint/       # 長時間セッションの checkpoint / handoff summary 用
 │   └── review-changes/
 ├── claude/                      # Claude Code 向け生成物
 │   ├── CLAUDE.md

@@ -44,6 +44,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 - `run-agent-evals` — check for behavior regressions after an instruction change.
 - `fix-bug-safely` — reproduce, root-cause, minimal diff, regression test.
 - `implement-feature-safely` — confirm scope, reuse patterns, verified small diffs.
+- `context-checkpoint` — long session or phase switch: merge working state into `.agent-os/context-checkpoints.md`.
 - `review-changes` — checklist review of a diff: correctness, scope, security, tests.
 
 ## Custom agents

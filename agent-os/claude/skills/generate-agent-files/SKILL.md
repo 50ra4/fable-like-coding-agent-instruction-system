@@ -12,7 +12,7 @@ The canonical procedure lives in `.agent-os/skills/generate-agent-files/SKILL.md
 3. Generate/update Claude targets: `CLAUDE.md` (short, always-loaded), `.claude/skills/*/SKILL.md` (thin wrappers), `.claude/agents/*.md` (specialty subagents).
 4. Generate/update Codex targets: `AGENTS.md`, `.agents/skills/*/SKILL.md`, `.codex/agents/*.toml` — equivalent in meaning to the Claude outputs.
 5. Treat `.agent-os/learned-rules.md`, `.agent-os/evals.md`, `.agent-os/failure-log.md`, and `.agent-os/review-feedback-log.md` as read-only inputs — those change only via `learn-from-feedback`/`improve-instructions`, never here. `.agent-os/project-profile.md` may be refreshed if stale.
-6. Diff Claude and Codex outputs side by side for the same source: wording may differ, behavior/rules must not.
+6. Diff Claude and Codex outputs side by side for the same source: wording may differ, behavior/rules must not — this applies to `context-checkpoint` too (Claude's wrapper may reference native compact, Codex's must not, but both prompt the same checkpoint behavior).
 7. Confirm no project-specific fact leaked into `.agent-os/GLOBAL_AGENTS.md` or the vendored `.agent-os/skills/`.
 8. Confirm always-loaded files stayed short and agents are split by specialty.
 9. Report which files were generated/updated per platform.

@@ -25,10 +25,10 @@
 #     .agent-os/skills/, and the vendored .agent-os/GLOBAL_AGENTS.md /
 #     .agent-os/GLOBAL_CLAUDE.md.
 #   - Protected (project-owned learning state, --force never overwrites
-#     these): the 8 adapter state files under <target>/.agent-os/*.md
+#     these): the 9 adapter state files under <target>/.agent-os/*.md
 #     (project-profile, learned-rules, failure-log, review-feedback-log,
-#     evals, command-map, architecture-map, risk-map) and the root entry
-#     files <target>/CLAUDE.md and <target>/AGENTS.md. Use
+#     evals, command-map, architecture-map, risk-map, context-checkpoints)
+#     and the root entry files <target>/CLAUDE.md and <target>/AGENTS.md. Use
 #     --reset-adapter to explicitly replace them (with an automatic
 #     backup first).
 #
@@ -51,15 +51,15 @@ Options:
   --for <which>       Which assistant(s) to wire up: claude, codex, or both.
   --force             Overwrite OS-owned files that already exist (skills,
                       agents, vendored .agent-os/skills/, GLOBAL_*.md).
-                      Never overwrites project-owned adapter state: the 8
+                      Never overwrites project-owned adapter state: the 9
                       .agent-os/*.md state files (project-profile,
                       learned-rules, failure-log, review-feedback-log,
-                      evals, command-map, architecture-map, risk-map) and
-                      the root CLAUDE.md/AGENTS.md entry files. Existing
-                      protected files print a PROTECTED: line and are left
-                      untouched.
+                      evals, command-map, architecture-map, risk-map,
+                      context-checkpoints) and the root CLAUDE.md/AGENTS.md
+                      entry files. Existing protected files print a
+                      PROTECTED: line and are left untouched.
   --reset-adapter     Explicitly reset project-owned adapter state: every
-                      existing protected file (the 8 .agent-os/*.md state
+                      existing protected file (the 9 .agent-os/*.md state
                       files plus root CLAUDE.md/AGENTS.md) is moved into
                       .agent-os/backup-<timestamp>/ and fresh starter
                       copies are installed in their place. Does not imply
@@ -179,10 +179,10 @@ unset _ao_top_dir _ao_top_path
 # misbehave in) the {{PROJECT_NAME}} substitution in apply_project_name().
 PROJECT_NAME_ESCAPED="$(printf '%s' "$PROJECT_NAME" | sed 's/[&/\]/\\&/g')"
 
-# The 8 project-owned adapter state files (relative to <target>/.agent-os/,
+# The 9 project-owned adapter state files (relative to <target>/.agent-os/,
 # without the .md extension). Must match project-adapter/.agent-os/*.md and
 # validate-agent-os.sh's ADAPTER_FILES list.
-ADAPTER_STATE_FILES=(project-profile learned-rules failure-log review-feedback-log evals command-map architecture-map risk-map)
+ADAPTER_STATE_FILES=(project-profile learned-rules failure-log review-feedback-log evals command-map architecture-map risk-map context-checkpoints)
 
 # ---- Bookkeeping -------------------------------------------------------
 INSTALLED_COUNT=0
@@ -410,7 +410,7 @@ apply_project_name() {
   rm -f "$file.bak"
 }
 
-# Apply {{PROJECT_NAME}} substitution to whichever of the 8 adapter state
+# Apply {{PROJECT_NAME}} substitution to whichever of the 9 adapter state
 # files under <target>/.agent-os/ were FRESHLY installed by the
 # copy_dir_contents call just above (never one that already existed --
 # PROTECTED/skipped files are never rewritten, so a rerun with --force

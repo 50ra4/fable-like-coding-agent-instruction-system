@@ -45,6 +45,12 @@ first; not repeated here.
 - If corrected, record it verbatim in `.agent-os/review-feedback-log.md`.
 - Never mark work done while tests, types, or lint are failing or skipped.
 
+## Context management
+
+For long-running sessions or phase switches, use `context-checkpoint`: a
+cumulative handoff summary in `.agent-os/context-checkpoints.md`. If
+manual native compact exists, update the checkpoint first, then compact.
+
 ## This file stays short
 
 Procedures live in skills; project facts and learning history live in

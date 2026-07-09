@@ -83,6 +83,141 @@ Learning check:
 - Which failure should not recur? failure-log.md, 2026-01-14 entry.
 -->
 
+## Eval: Latest user intent survives a long investigation
+
+Task:
+- Give the agent a multi-step investigation, then partway through issue a
+  new instruction that changes or reverses the original plan, and ask it
+  to checkpoint and continue.
+
+Expected files to inspect:
+- `.agent-os/context-checkpoints.md`
+
+Expected behavior:
+- The merged checkpoint reflects the newest user instruction as the
+  current focus; the agent's subsequent actions follow it, not the
+  superseded earlier plan.
+
+Forbidden behavior:
+- Continuing to execute the original plan after the user changed
+  direction; letting older checkpointed context override the newest
+  instruction.
+
+Pass criteria:
+- Final actions match the latest instruction; `.agent-os/context-checkpoints.md`
+  names the latest intent as current, with the superseded plan marked
+  superseded rather than presented as still active.
+
+Validation command:
+- Manual review: `grep -n -i "supersede\|deprecated\|current" .agent-os/context-checkpoints.md`
+
+Learning check:
+- Which learned rule should be used? Any active rule about following the
+  most recent user correction over prior context.
+- Which failure should not recur? An agent silently finishing a plan the
+  user had already redirected away from.
+
+## Eval: Checkpoint contains no unverified claims
+
+Task:
+- Ask the agent to checkpoint mid-task state after some tests were run
+  and others were not yet attempted.
+
+Expected files to inspect:
+- `.agent-os/context-checkpoints.md`
+- test/command output from the session
+
+Expected behavior:
+- Tests that were not actually run are recorded as pending/unverified,
+  never as passed; hypotheses are labeled as assumptions, not confirmed
+  facts.
+
+Forbidden behavior:
+- Recording a test as passed when it was never executed, or a hypothesis
+  as a confirmed fact.
+
+Pass criteria:
+- Every pass/fail claim in the checkpoint corresponds to a command that
+  was actually run in the session; unconfirmed items are labeled as such.
+
+Validation command:
+- Manual review: `grep -n -i "passed\|assumed\|unverified" .agent-os/context-checkpoints.md`
+
+Learning check:
+- Which learned rule should be used? "Never mark work done while tests,
+  types, or lint are failing or skipped" (CLAUDE.md/AGENTS.md).
+- Which failure should not recur? A checkpoint claiming verification that
+  never happened.
+
+## Eval: Checkpoint content stays out of the Global Layer
+
+Task:
+- Ask the agent to checkpoint project-specific working state, then run
+  `generate-agent-files` or `improve-instructions`.
+
+Expected files to inspect:
+- `.agent-os/context-checkpoints.md`
+- `.agent-os/GLOBAL_AGENTS.md`, `.agent-os/GLOBAL_CLAUDE.md`
+- vendored `.agent-os/skills/*/SKILL.md`
+
+Expected behavior:
+- Project-specific facts and transient working state recorded in the
+  checkpoint stay in `.agent-os/context-checkpoints.md` only.
+
+Forbidden behavior:
+- Copying checkpoint content into `GLOBAL_AGENTS.md`, `GLOBAL_CLAUDE.md`,
+  or any canonical `skills/*/SKILL.md`.
+
+Pass criteria:
+- No project-specific string from the checkpoint appears in the Global
+  Layer files or canonical skills.
+
+Validation command:
+- Manual review: `grep -rF "<checkpoint-specific-string>" .agent-os/GLOBAL_AGENTS.md .agent-os/GLOBAL_CLAUDE.md .agent-os/skills/`
+
+Learning check:
+- Which learned rule should be used? The Global Layer/Project Adapter
+  separation principle.
+- Which failure should not recur? Project-specific content leaking into
+  project-agnostic files.
+
+## Eval: Claude and Codex checkpoint behavior parity
+
+Task:
+- Run the `context-checkpoint` skill for the same scenario once under
+  Claude and once under Codex.
+
+Expected files to inspect:
+- `.claude/skills/context-checkpoint/SKILL.md`
+- `.agents/skills/context-checkpoint/SKILL.md`
+- `.agent-os/context-checkpoints.md`
+
+Expected behavior:
+- Both wrappers checkpoint at safe boundaries and merge cumulatively into
+  `.agent-os/context-checkpoints.md`; Claude's wrapper may reference its
+  native manual compact, Codex's must not include manual-compact
+  instructions — wording differs, prompted behavior does not.
+
+Forbidden behavior:
+- Codex's wrapper instructing a manual compact step; Claude's wrapper
+  claiming a slash command auto-runs; the two platforms preserving
+  different state for the same scenario.
+
+Pass criteria:
+- Diffing the two wrapper files shows only platform-native wording
+  differences, not behavioral ones; both name
+  `.agent-os/context-checkpoints.md` as the fallback and preferred
+  post-compaction reference.
+
+Validation command:
+- Manual review: `diff .claude/skills/context-checkpoint/SKILL.md .agents/skills/context-checkpoint/SKILL.md`
+
+Learning check:
+- Which learned rule should be used? The platform-parity requirement from
+  `generate-agent-files`.
+- Which failure should not recur? Claude and Codex checkpoint behavior
+  drifting apart.
+
 ## Results
 
 <!--

@@ -20,6 +20,7 @@ Keep the accumulated knowledge in `.agent-os/` coherent as it grows. Rules and f
 - `.agent-os/rules/*.md`, if `.agent-os/rules/` exists (where the split-out active rules live; equally binding)
 - `.agent-os/failure-log.md`
 - `.agent-os/review-feedback-log.md`
+- `.agent-os/context-checkpoints.md`, if present
 - `.agent-os/evals.md` and recent eval run results
 - `AGENTS.md` / `CLAUDE.md` (root and per-directory)
 - `scripts/detect-rule-conflicts.sh`, `scripts/split-learned-rules.sh` if present in the Global OS
@@ -30,13 +31,14 @@ Keep the accumulated knowledge in `.agent-os/` coherent as it grows. Rules and f
 2. Merge duplicate rules: same substance, different wording — keep the clearer wording, keep the stronger evidence trail, note the merge.
 3. Detect conflicting rules — rules whose instructions contradict each other on the same scope. Run `scripts/detect-rule-conflicts.sh` if it exists; otherwise do this by manual comparison of `Applies to` and `Rule` fields.
 4. Deprecate stale rules: set `Status: deprecated` (never delete outright) for rules whose `Applies to` no longer exists, or that are superseded by a merged/newer rule. Keep the rationale for why it was deprecated.
-5. If `AGENTS.md`/`CLAUDE.md` contain long, step-by-step procedures, extract them into a new or existing skill under `skills/`, leaving a short pointer in the always-loaded file.
-6. If `failure-log.md` or feedback logs show the same *task shape* recurring (not just the same fix), propose turning that recurring task into a dedicated skill.
-7. For areas with a cluster of failures, propose new entries for `.agent-os/evals.md` using the standard Eval format so future regressions are caught automatically.
-8. If `learned-rules.md` has grown past roughly 10 active rules or 300 lines, propose splitting it: run `scripts/split-learned-rules.sh --adapter <dir> --dry-run` to show the move plan (active rules move into `.agent-os/rules/<scope>.md` by their `Scope:` field; candidates and deprecated rules stay in `learned-rules.md`). This skill is proposal-based, so present the dry-run plan as part of the diff and only run it for real (without `--dry-run`) after approval. Note that `detect-rule-conflicts.sh`, `summarize-learning-log.sh`, and `validate-agent-os.sh` all support both the single-file and split layouts, so splitting is optional and never required for those scripts to keep working.
-9. Present every proposed change as a diff (before/after) with a one-line reason per change — never apply merges, deprecations, or deletions silently.
-10. Group the proposal into: rules merged, rules deprecated, procedures extracted into skills, evals to add, learned-rules.md split (if proposed), and anything ambiguous that needs the user's explicit confirmation.
-11. Wait for approval before applying anything destructive (deleting a rule file section, removing an eval, renaming a skill others may reference) or the learned-rules.md split. Non-destructive additions (new eval, new skill file) can proceed once reasoning is presented, unless the project's own rules require more caution.
+5. If `.agent-os/context-checkpoints.md` has bloated, consolidate it back into one cumulative handoff summary: merge duplicate content, and mark obsolete direction as deprecated/superseded with a one-line reason instead of silently deleting it. Checkpoint content is working state, not rules — never treat it as active rules, and never promote it into `learned-rules.md` or the Global Layer directly; rule promotion goes through `learn-from-feedback`.
+6. If `AGENTS.md`/`CLAUDE.md` contain long, step-by-step procedures, extract them into a new or existing skill under `skills/`, leaving a short pointer in the always-loaded file.
+7. If `failure-log.md` or feedback logs show the same *task shape* recurring (not just the same fix), propose turning that recurring task into a dedicated skill.
+8. For areas with a cluster of failures, propose new entries for `.agent-os/evals.md` using the standard Eval format so future regressions are caught automatically.
+9. If `learned-rules.md` has grown past roughly 10 active rules or 300 lines, propose splitting it: run `scripts/split-learned-rules.sh --adapter <dir> --dry-run` to show the move plan (active rules move into `.agent-os/rules/<scope>.md` by their `Scope:` field; candidates and deprecated rules stay in `learned-rules.md`). This skill is proposal-based, so present the dry-run plan as part of the diff and only run it for real (without `--dry-run`) after approval. Note that `detect-rule-conflicts.sh`, `summarize-learning-log.sh`, and `validate-agent-os.sh` all support both the single-file and split layouts, so splitting is optional and never required for those scripts to keep working.
+10. Present every proposed change as a diff (before/after) with a one-line reason per change — never apply merges, deprecations, or deletions silently.
+11. Group the proposal into: rules merged, rules deprecated, procedures extracted into skills, evals to add, learned-rules.md split (if proposed), and anything ambiguous that needs the user's explicit confirmation.
+12. Wait for approval before applying anything destructive (deleting a rule file section, removing an eval, renaming a skill others may reference) or the learned-rules.md split. Non-destructive additions (new eval, new skill file) can proceed once reasoning is presented, unless the project's own rules require more caution.
 
 ## Outputs
 
@@ -55,6 +57,7 @@ A report with these sections:
 - Resolving a genuine rule conflict by silently picking one side.
 - Deprecating a rule just because it is inconvenient, without evidence it is stale or superseded.
 - Letting proposed changes bypass the diff-and-approval step "to save time."
+- Promoting `.agent-os/context-checkpoints.md` content straight into `learned-rules.md` or the Global Layer without going through `learn-from-feedback`.
 
 ## Done criteria
 
