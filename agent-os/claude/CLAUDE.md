@@ -32,7 +32,7 @@ If `.agent-os/` exists in this project, read before making any change:
 - `run-agent-evals` — instructions just changed, or it's time to check for behavior regressions.
 - `fix-bug-safely` — any bug report or unexpected behavior needing a code change: reproduce, root-cause, fix, test.
 - `implement-feature-safely` — any new-functionality request: confirm scope, reuse patterns, verified diffs.
-- `context-checkpoint` — long session or phase switch: merge working state into `.agent-os/context-checkpoints.md`.
+- `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.
 - `review-changes` — before considering a diff done, or when asked to review a PR.
 
 ## Use subagents for specialized judgment

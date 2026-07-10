@@ -52,6 +52,8 @@ first; not repeated here.
 For long-running sessions or phase switches, use `context-checkpoint`: a
 cumulative handoff summary in `.agent-os/context-checkpoints.md`. If
 manual native compact exists, update the checkpoint first, then compact.
+When resuming — after compaction, a handoff, or a new session — read that
+file first if it exists and continue from its latest recorded intent.
 
 ## This file stays short
 
