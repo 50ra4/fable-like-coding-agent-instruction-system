@@ -41,6 +41,17 @@ installed alongside this project. Read it first; not repeated here.
   `.agent-os/review-feedback-log.md`.
 - Never mark work done while tests, types, or lint are failing or skipped.
 
+## Context management
+
+For long-running sessions, large tool output, or before switching task
+phases, use the `context-checkpoint` skill. It keeps a compact, cumulative
+handoff summary in `.agent-os/context-checkpoints.md` without bloating
+this file. Auto-compaction here can fire without warning, so update the
+checkpoint first whenever you can. When resuming — after compaction, a
+handoff, or a new session — read `.agent-os/context-checkpoints.md` first
+if it exists and continue from its latest recorded intent, not stale
+context.
+
 ## This file stays short
 
 Procedures live in skills. Project facts and learning history live in

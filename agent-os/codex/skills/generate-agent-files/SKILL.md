@@ -25,7 +25,9 @@ this file is a compact Codex-facing pointer, not a replacement.
    `improve-instructions`, never here. `.agent-os/project-profile.md`
    may be refreshed if stale.
 6. Diff Claude and Codex outputs side by side for the same source:
-   wording may differ, behavior/rules must not.
+   wording may differ, behavior/rules must not — including
+   `context-checkpoint`, whose Codex wrapper omits manual-compact
+   instructions but must prompt the same checkpoint behavior as Claude's.
 7. Confirm no project-specific fact leaked into `.agent-os/GLOBAL_AGENTS.md`
    or the vendored `.agent-os/skills/`.
 

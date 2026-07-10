@@ -20,7 +20,7 @@ frontmatter, codex agent TOML keys, and line-count guards).
 
 Options:
   --adapter <dir>   Additionally validate <dir>/.agent-os as an installed
-                    project adapter (checks the 8 required files, that
+                    project adapter (checks the 9 required files, that
                     GLOBAL_AGENTS.md was vendored, and that any Status:
                     lines in learned-rules.md are one of
                     candidate/active/deprecated). If .agent-os/rules/
@@ -216,7 +216,7 @@ for t in "${TEMPLATES[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/templates/$t" "templates/$t"
 done
 
-# ---- Canonical skills (10) -------------------------------------------------
+# ---- Canonical skills (11) -------------------------------------------------
 CANONICAL_SKILLS=(
   project-bootstrap
   project-profile
@@ -227,6 +227,7 @@ CANONICAL_SKILLS=(
   run-agent-evals
   fix-bug-safely
   implement-feature-safely
+  context-checkpoint
   review-changes
 )
 for s in "${CANONICAL_SKILLS[@]}"; do
@@ -236,7 +237,7 @@ done
 # ---- Claude assistant wiring ------------------------------------------------
 check_file_exists "$AGENT_OS_ROOT/claude/CLAUDE.md" "claude/CLAUDE.md"
 
-CLAUDE_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions generate-agent-files run-agent-evals fix-bug-safely implement-feature-safely review-changes)
+CLAUDE_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions generate-agent-files run-agent-evals fix-bug-safely implement-feature-safely context-checkpoint review-changes)
 for s in "${CLAUDE_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/claude/skills/$s/SKILL.md"
 done
@@ -254,7 +255,7 @@ for a in "${CODEX_AGENTS[@]}"; do
   check_codex_toml "$AGENT_OS_ROOT/codex/agents/$a.toml"
 done
 
-CODEX_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions generate-agent-files run-agent-evals fix-bug-safely implement-feature-safely review-changes)
+CODEX_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions generate-agent-files run-agent-evals fix-bug-safely implement-feature-safely context-checkpoint review-changes)
 for s in "${CODEX_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/codex/skills/$s/SKILL.md"
 done
@@ -263,7 +264,7 @@ done
 check_file_exists "$AGENT_OS_ROOT/project-adapter/AGENTS.md" "project-adapter/AGENTS.md"
 check_file_exists "$AGENT_OS_ROOT/project-adapter/CLAUDE.md" "project-adapter/CLAUDE.md"
 
-ADAPTER_FILES=(project-profile learned-rules failure-log review-feedback-log evals command-map architecture-map risk-map)
+ADAPTER_FILES=(project-profile learned-rules failure-log review-feedback-log evals command-map architecture-map risk-map context-checkpoints)
 for f in "${ADAPTER_FILES[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/project-adapter/.agent-os/$f.md" "project-adapter/.agent-os/$f.md"
 done

@@ -21,7 +21,7 @@ Verify, with real task execution rather than inspection alone, that the accumula
 
 ## Eval perspectives to cover
 
-Choose evals that exercise: a small bug fix, a feature addition, adding tests, a refactor, a security review, a UI change, a dependency-addition judgment call, implementing something to match an existing design, recurrence-prevention from the failure log, and verification that a specific piece of user feedback was actually applied.
+Choose evals that exercise: a small bug fix, a feature addition, adding tests, a refactor, a security review, a UI change, a dependency-addition judgment call, implementing something to match an existing design, recurrence-prevention from the failure log, verification that a specific piece of user feedback was actually applied, retention of the latest user intent after a long investigation or a mid-task direction change (old plans must not override the newest instruction), a checkpoint with no unverified content (tests not run must never be recorded as passed; hypotheses stay assumptions, not confirmed facts), no Global Layer contamination from checkpoint content (project-specific checkpoint content never lands in `GLOBAL_*` files or the canonical skills), and Claude/Codex checkpoint parity (different wording allowed, same prompted behaviors).
 
 ## Procedure
 
