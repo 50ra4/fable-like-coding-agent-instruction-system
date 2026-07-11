@@ -5,7 +5,7 @@ description: Generate the real per-platform agent files (Claude and Codex) from 
 
 ## Purpose
 
-Materialize the layered design — Global Agent OS + project adapter — into the concrete files each platform actually reads at runtime, without letting the platforms drift apart or leaking project rules into the global layer.
+Materialize the layered design — Global Agent OS + project adapter — into the concrete files each platform actually reads at runtime, without letting the platforms drift apart or leaking project rules into the global layer. This skill is the canonical procedure for what those files look like; in the Agent OS source repo itself, wrapper regeneration is executed via the `fable-build` skill (`skills/fable-build/SKILL.md`), which wraps this procedure in a parity-audit and diff-approval protocol.
 
 ## When to use
 

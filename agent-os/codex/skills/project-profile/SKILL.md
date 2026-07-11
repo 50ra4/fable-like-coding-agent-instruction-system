@@ -20,6 +20,8 @@ this file is a compact Codex-facing pointer, not a replacement.
    and note why — do not leave a silent gap.
 5. Prune stale, never-confirmed hypotheses; keep the file short and
    scannable, pushing any long procedure into a skill instead.
+6. Note the update in the file itself (a "last updated" line with the
+   reason) so future readers know why it changed.
 
 ## Codex-specific notes
 

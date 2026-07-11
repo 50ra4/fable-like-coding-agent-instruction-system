@@ -29,6 +29,7 @@ If `.agent-os/` exists in this project, read before making any change:
 - `learn-from-feedback` — a correction or review comment just happened; record and classify it now.
 - `improve-instructions` — instructions have grown noisy or contradictory; propose a cleanup (approval required).
 - `generate-agent-files` — regenerate the Claude/Codex platform files from the Global OS plus the adapter.
+- `fable-build` — (Agent OS source repo only) builder-model regeneration of claude/codex wrappers with parity audit; diffs require approval.
 - `run-agent-evals` — instructions just changed, or it's time to check for behavior regressions.
 - `fix-bug-safely` — any bug report or unexpected behavior needing a code change: reproduce, root-cause, fix, test.
 - `implement-feature-safely` — any new-functionality request: confirm scope, reuse patterns, verified diffs.

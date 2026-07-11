@@ -75,7 +75,7 @@ bash agent-os/scripts/bootstrap-project.sh --target /path/to/project --for codex
 
 ## `--force` と `--reset-adapter`
 
-`--force` は skills・agents・ベンダリング済み `.agent-os/skills/`・`GLOBAL_*.md` など Agent OS 自身が管理する（OS-owned）ファイルだけを上書きします。**`project-profile.md` / `learned-rules.md` / `failure-log.md` / `review-feedback-log.md` / `evals.md` / `command-map.md` / `architecture-map.md` / `risk-map.md` の8ファイルと、ルートの `CLAUDE.md` / `AGENTS.md` は、たとえ `--force` を指定しても絶対に上書きされません**（学習によって蓄積された、そのプロジェクト固有の状態のため）。既存のファイルがある場合は `PROTECTED:` 行が表示され、そのまま保持されます。
+`--force` は skills・agents・ベンダリング済み `.agent-os/skills/`・`GLOBAL_*.md` など Agent OS 自身が管理する（OS-owned）ファイルだけを上書きします。**`project-profile.md` / `learned-rules.md` / `failure-log.md` / `review-feedback-log.md` / `evals.md` / `command-map.md` / `architecture-map.md` / `risk-map.md` / `context-checkpoints.md` の9ファイルと、ルートの `CLAUDE.md` / `AGENTS.md` は、たとえ `--force` を指定しても絶対に上書きされません**（学習によって蓄積された、そのプロジェクト固有の状態のため）。既存のファイルがある場合は `PROTECTED:` 行が表示され、そのまま保持されます。
 
 これらの学習状態を明示的にリセットしたい場合は `--reset-adapter` を使います。既存の保護対象ファイルを `.agent-os/backup-<タイムスタンプ>/` に自動でバックアップしたうえで、新しい雛形を再インストールします。
 
@@ -159,6 +159,23 @@ bash agent-os/scripts/split-learned-rules.sh --adapter "$TARGET"
 
 分割は任意（optional）です。初期状態は単一ファイルのままで問題なく、`detect-rule-conflicts.sh` / `summarize-learning-log.sh` / `validate-agent-os.sh` はいずれのレイアウトにも対応しています。
 
+## Fable によるビルド（fable-build）
+
+`claude/` / `codex/` 配下のラッパー（skills / agents）は手で編集せず、`fable-build` スキル（`skills/fable-build/SKILL.md`）に従って Fable（ビルダーモデル）が canonical スキルから再生成します。機械的な部分は `scripts/fable-build.sh` が補助します。
+
+```bash
+# canonical → ラッパーの対応と欠落を一覧する
+bash agent-os/scripts/fable-build.sh --list
+
+# 再生成候補（ビルド出力ディレクトリ）と現状の diff を提示する
+bash agent-os/scripts/fable-build.sh --diff <build-dir>
+
+# 形式検証（frontmatter / TOML キー / ラッパー行数 / validate-agent-os.sh）
+bash agent-os/scripts/fable-build.sh --check
+```
+
+意味的な判定（ラッパーが canonical と意味的に等価か、プラットフォーム非対称が正当か）はスクリプトでは行わず、Fable が `reports/fable-build-parity.md` にパリティ監査レポートとして残します。再生成 diff は `improve-instructions` と同じ「diff+理由を提示し、承認後に適用」プロトコルに従い、承認なしに上書きされることはありません。
+
 ## ディレクトリ構成の一覧
 
 ```
@@ -168,13 +185,14 @@ agent-os/
 ├── GLOBAL_CLAUDE.md            # Global Layer: Claude Code 固有の差分
 ├── INSTALL.md                  # 導入手順（日本語）
 ├── templates/                   # 各種テンプレート
-├── skills/                      # 11 の canonical スキル
+├── skills/                      # 12 の canonical スキル
 │   ├── project-bootstrap/
 │   ├── project-profile/
 │   ├── adapt-to-project/
 │   ├── learn-from-feedback/
 │   ├── improve-instructions/
 │   ├── generate-agent-files/
+│   ├── fable-build/               # Fable 用ビルド手順（ラッパー再生成 + パリティ監査）
 │   ├── run-agent-evals/
 │   ├── fix-bug-safely/
 │   ├── implement-feature-safely/
@@ -192,8 +210,10 @@ agent-os/
 │   ├── AGENTS.md
 │   ├── CLAUDE.md
 │   └── .agent-os/
+├── reports/                     # fable-build のパリティ監査レポート
 └── scripts/
     ├── bootstrap-project.sh
+    ├── fable-build.sh
     ├── validate-agent-os.sh
     ├── summarize-learning-log.sh
     ├── detect-rule-conflicts.sh
