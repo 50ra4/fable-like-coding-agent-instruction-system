@@ -45,6 +45,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 - `fable-build` — (Agent OS source repo only) builder-model regeneration of claude/codex wrappers with parity audit; diffs require approval.
 - `run-agent-evals` — check for behavior regressions after an instruction change.
 - `judge-agent-eval` — independent-judge grading of an executed eval from its saved transcript.
+- `synthesize-evals` — (builder-model) synthesize discriminative evals from failure-log clusters, verbatim evidence attached; non-destructive additions only.
 - `fix-bug-safely` — reproduce, root-cause, minimal diff, regression test.
 - `implement-feature-safely` — confirm scope, reuse patterns, verified small diffs.
 - `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.
@@ -52,9 +53,8 @@ Long procedures live in skills, not here — read the relevant skill file before
 
 ## Custom agents
 
-Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer`
-(diff correctness), `architecture-reviewer` (design/boundary review),
-`test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz, injection risk),
+Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer` (diff correctness),
+`architecture-reviewer` (design/boundary review), `test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz, injection risk),
 `bug-investigator` (root cause, no fixing), and `instruction-maintainer` (instruction-improvement proposals).
 
 No project-specific facts belong in this file — those live in `.agent-os/`.

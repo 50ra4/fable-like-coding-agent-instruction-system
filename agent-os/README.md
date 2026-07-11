@@ -136,6 +136,10 @@ bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --record <eval-name
 
 eval の実行結果は従来、実行モデルの自己申告でした。`judge-agent-eval` スキルでは、実行モデルが実行トランスクリプトを `.agent-os/eval-transcripts/<eval名スラッグ>-<日付>.md` に保存し、より強い独立した judge モデルがそれを通読して Pass criteria / Forbidden behavior / Learning check を採点します(該当箇所の引用付き)。judge の所見は `run-agent-evals.sh --record --judge-model --judge-notes --transcript` で Results テーブルの Judge 列に記録され、judge 未実施の結果は `unjudged` として区別されます。judge は実行モデル自身であってはなりません — スクリプト自体が、トランスクリプト無し(または実在しないファイル)での judge 記録と、`--judge-model` が `--model` と一致する記録を拒否します。
 
+### 失敗クラスタからの eval 合成（synthesize-evals）
+
+eval の起草そのものも、ビルダーモデル（Fable 級）に予約すべき precision-critical なタスクです。実行モデルが自分自身のために eval を書くと、その回帰を持つモデルだけが fail するという識別力（discriminative power）が担保されません — 自作自演の eval は往々にしてそのモデルが既に得意なことしか検証しないからです。`synthesize-evals` スキル（`skills/synthesize-evals/SKILL.md`）は、`failure-log.md` / `review-feedback-log.md` の逐語エントリを根本原因・task shape で意味的にクラスタリングし、1クラスタにつき1つの eval を標準 Eval format で起草します。Forbidden behavior には元の失敗を再現する行動を必ず含め、その回帰を持つモデルが確実に fail するようにします。Validation command は `command-map.md` に一字一句掲載されているコマンドのみを使い、該当がなければ `"Manual review"` とします。各 eval には「捕まえる回帰」の一行説明と、根拠となるログエントリの逐語引用を HTML コメントとして直後に添付します（`run-agent-evals.sh` はパース前にコメントを除去するため、`--show`/`--check` のフォーマット互換性は保たれます）。追加は `improve-instructions` の非破壊的追加ルールに従い、既存 eval の削除・書き換えは常に承認必須です。採点は `judge-agent-eval`（#4）、ルール蒸留は `distill-rules`（#5）の領分であり、`synthesize-evals` はあくまで eval の起草とその根拠提示に責務を限定します。
+
 ## global layer と project adapter の責務分離
 
 - **Global Layer** には、プロジェクトを問わず常に成り立つ最小限の原則だけを書きます。特定の言語・フレームワーク・ディレクトリ構成・コマンドは絶対に書きません。
@@ -191,7 +195,7 @@ agent-os/
 ├── GLOBAL_CLAUDE.md            # Global Layer: Claude Code 固有の差分
 ├── INSTALL.md                  # 導入手順（日本語）
 ├── templates/                   # 各種テンプレート
-├── skills/                      # 14 の canonical スキル
+├── skills/                      # 15 の canonical スキル
 │   ├── project-bootstrap/
 │   ├── project-profile/
 │   ├── adapt-to-project/
@@ -201,6 +205,8 @@ agent-os/
 │   ├── generate-agent-files/
 │   ├── fable-build/               # Fable 用ビルド手順（ラッパー再生成 + パリティ監査）
 │   ├── run-agent-evals/
+│   ├── judge-agent-eval/          # eval 実行結果の第三者採点（LLM-as-judge）
+│   ├── synthesize-evals/          # 失敗クラスタからの eval 合成（Fable 用: 識別力の担保）
 │   ├── fix-bug-safely/
 │   ├── implement-feature-safely/
 │   ├── context-checkpoint/       # 長時間セッションの checkpoint / handoff summary 用
