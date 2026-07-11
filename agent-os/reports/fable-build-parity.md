@@ -2,9 +2,9 @@
 
 単一の累積レポート。`fable-build` の各ビルドはこのファイルにマージする（追記で2つ目のレポートブロックを作らない）。
 
-- Last build: 2026-07-11（初回ビルド）
+- Last build: 2026-07-11（issue #4: judge-agent-eval 追加ビルド）
 - Builder: Fable（ビルダーモデル）
-- 対象: canonical 12 スキル × Claude/Codex ラッパー、および agent 定義 6 ペア
+- 対象: canonical 13 スキル（`judge-agent-eval` 新規追加）× Claude/Codex ラッパー、および agent 定義 6 ペア
 - 手法: 各 canonical スキルの拘束項目（Procedure の必須ステップ / Forbidden / Done criteria）を抽出し、Claude ラッパーと Codex ラッパーが「文言は違っても同じ振る舞いをプロンプトするか」を突き合わせた。字面 diff ではなく意味比較。スクリプト（`scripts/fable-build.sh`）は列挙・diff 提示・形式検証のみで、この判定には関与していない。
 
 ## 判定基準
@@ -23,7 +23,8 @@
 | improve-instructions | diff+承認プロトコル・削除でなく deprecated・矛盾の表面化・checkpoint 内容の直接昇格禁止: 両者 OK | learned-rules 分割提案（canonical step 9）は両者同等に省略（対称） | 等価 |
 | generate-agent-files | ラッパーへの新規手続き禁止・意味乖離禁止・Global 汚染禁止・重複禁止・checkpoint 非対称の扱い: 両者 OK | canonical に fable-build への相互参照 1 行を追加（本ビルド）。リポジトリ保守メタ情報のためラッパー非反映は正当 | 等価 |
 | fable-build（新規） | 意味判定のスクリプト委譲禁止・無承認上書き禁止・非対称の平坦化禁止・ラッパー行数 < canonical: 両者 OK | 初回は手書き（本ビルドで作成）。Codex 版のみ TOML キー（name/description/developer_instructions）を明記 — プラットフォーム固有形式のため正当 | 等価 |
-| run-agent-evals | forbidden behavior 発生時の pass 禁止・失敗の隠蔽禁止・--exec の command-map ゲート・失敗の failure-log 記録: 両者 OK | Learning check への明示言及を両者同等に省略（対称、canonical へ deferral）。Claude「eval 実行と instructions 修正の同時実施禁止」/ Codex「基準の発明禁止」はそれぞれ他方の canonical 記述と矛盾しない補強 | 等価（記録のみ） |
+| run-agent-evals | forbidden behavior 発生時の pass 禁止・失敗の隠蔽禁止・--exec の command-map ゲート・失敗の failure-log 記録・**（本ビルド追加）run transcript の保存（`.agent-os/eval-transcripts/<slug>-<date>.md`）・`--record` への `--judge-notes`/`--transcript` 伝播・`judge-agent-eval` への採点依頼・自己採点（自分の実行分に `--judge-notes` を付けない）の禁止**: 両者 OK | Learning check への明示言及を両者同等に省略（対称、canonical へ deferral）。Claude「eval 実行と instructions 修正の同時実施禁止」/ Codex「基準の発明禁止」はそれぞれ他方の canonical 記述と矛盾しない補強。新規の transcript/judge 項目は Claude/Codex 双方に同等の粒度で追加済み（非対称なし） | 等価（記録のみ） |
+| judge-agent-eval（新規） | transcript 必須（なければ `unjudged` のまま拒否）・実行モデル自身の採点禁止・Pass criteria ごとの引用付き verdict・Forbidden behavior の引用付き検出・Learning check の実施検証・self-report とのミスマッチ検出・`--check --exec` 経由でのみ再検証・`--record --judge-notes --transcript` での記録: 両者 OK | 初回作成（本ビルド）。両ラッパーとも `fable-build`/`fable-build.sh` の frontmatter・pointer・行数規約に準拠。プラットフォーム固有の非対称は意図的に設けていない | 等価 |
 | fix-bug-safely | 再現必須・根本原因の証拠・最小 diff・回帰テスト・テスト弱体化禁止・risk-map 承認: 両者 OK | なし | 等価 |
 | implement-feature-safely | パターン再利用・依存追加の理由必須・境界越え承認・実コマンド検証: 両者 OK | Codex 版に明示の「報告」ステップがないが、Codex-specific note が最終レポートでの再利用元の引用を要求しており実質カバー（対称性は許容範囲、記録のみ） | 等価（記録のみ） |
 | context-checkpoint | 安全境界・累積マージ（追記禁止）・未検証を confirmed と記録禁止・履歴圧縮の虚偽主張禁止・最新ユーザー意図の保持: 両者 OK | **文書化済みの正当な非対称**: Claude は手動 `/compact` に言及可（自動実行の主張は禁止）、Codex は手動圧縮指示そのものが禁止（auto-compaction 前提）。根拠: canonical `generate-agent-files` step 7 の明文規定 | 等価（非対称は正当） |
@@ -42,6 +43,9 @@
 2. `codex/skills/project-profile/SKILL.md` — 「last updated 行の記録」（canonical step 7）を追加。同上。
 3. `codex/skills/review-changes/SKILL.md` — 命名/規約チェック（canonical step 9）を追加。同上。
 4. `codex/agents/code-reviewer.toml` — 所見なし severity の扱いを「省略」から「明示」へ変更。canonical `review-changes` の「no findings は明示せよ」と Claude 版に整合。
+5. （issue #4 ビルド）`scripts/run-agent-evals.sh` — `--record` に `--judge-notes`/`--transcript` を追加し、Results 表に `Judge` 列（6列目）を追加。既存 5 列テーブルはヘッダ/セパレータのみをその場で 6 列に拡張し、既存データ行は無変更のまま。
+6. （issue #4 ビルド）`claude/skills/run-agent-evals/SKILL.md`・`codex/skills/run-agent-evals/SKILL.md` — canonical の新規ステップ（transcript 保存・`judge-agent-eval` への採点依頼・自己採点禁止）を両ラッパーに同等の粒度で追加。両ラッパーとも canonical（93行）より短いことを確認済み（Claude 29行 / Codex 47行）。
+7. （issue #4 ビルド）`claude/skills/judge-agent-eval/SKILL.md`・`codex/skills/judge-agent-eval/SKILL.md` — 新規作成。canonical（58行）より短いことを確認済み（Claude 29行 / Codex 44行）、両者とも `skills/judge-agent-eval/SKILL.md` へのポインタを含む。
 
 ## ドキュメント整合監査（機械的整合のみ）
 
@@ -54,13 +58,20 @@
 
 ## 検証結果（本ビルド時点）
 
-- `bash agent-os/scripts/validate-agent-os.sh` → PASS: 85 / WARN: 0 / FAIL: 0
-- `bash agent-os/scripts/fable-build.sh --list` → PASS: 54 / FAIL: 0（12 スキル × 両ラッパー、orphan なし、agent 6 ペア OK）
-- `bash agent-os/scripts/fable-build.sh --check` → PASS（frontmatter / TOML キー / ラッパー行数 < canonical / canonical へのポインタ / validate 連携）
-- サンプルプロジェクトへの `bootstrap-project.sh --for both` → 配置成功、`validate-agent-os.sh --adapter` PASS: 96 / FAIL: 0、`fable-build` ラッパーも両プラットフォームに配置確認
+- `bash agent-os/scripts/validate-agent-os.sh` → PASS: 85 / WARN: 0 / FAIL: 0（初回ビルド時点の記録）
+- `bash agent-os/scripts/fable-build.sh --list` → PASS: 54 / FAIL: 0（12 スキル × 両ラッパー、orphan なし、agent 6 ペア OK）（初回ビルド時点の記録）
+- `bash agent-os/scripts/fable-build.sh --check` → PASS（frontmatter / TOML キー / ラッパー行数 < canonical / canonical へのポインタ / validate 連携）（初回ビルド時点の記録）
+- サンプルプロジェクトへの `bootstrap-project.sh --for both` → 配置成功、`validate-agent-os.sh --adapter` PASS: 96 / FAIL: 0、`fable-build` ラッパーも両プラットフォームに配置確認（初回ビルド時点の記録）
+
+### 本ビルド（issue #4: judge-agent-eval 追加）での再検証
+
+- `bash agent-os/scripts/fable-build.sh --list` → PASS: 58 / FAIL: 0（13 スキル × 両ラッパー、orphan なし、agent 6 ペア OK、`judge-agent-eval` が新規に検出されている）
+- `bash agent-os/scripts/fable-build.sh --check` → own checks PASS: 97 / WARN: 0 / FAIL: 0、内部で呼ぶ `validate-agent-os.sh` も PASS: 88 / WARN: 0 / FAIL: 0、overall RESULT: PASS
+- `scripts/run-agent-evals.sh` の手動テスト（スクラッチアダプタ、コミット対象外）: 新規 evals.md（Results セクションなし）への `--record` → 6列ヘッダ + `Judge=unjudged` で新規作成／既存 5 列テーブルへの `--record` → ヘッダ・セパレータのみ 6 列へその場拡張、既存データ行は無変更／`--judge-notes`+`--transcript` 付き `--record` → `Judge` セルが `"<judge-notes>; transcript: <path>"`／`|` と改行を含む `--judge-notes` はサニタイズされ表を壊さない／`--judge-notes` と `--list` の同時指定はエラー(exit 2)／`--list`・`--show`・`--check` の既存動作に影響なし。すべて期待どおり。
 
 ## 次回ビルドへの持ち越し（記録のみの所見）
 
-- learn-from-feedback / run-agent-evals: 両ラッパーが対称に省略している報告系ステップ（更新ファイルの報告、Learning check の明示）をラッパーに昇格させるか判断する。
+- learn-from-feedback: ラッパーが対称に省略している報告系ステップ（更新ファイルの報告）をラッパーに昇格させるか判断する。
 - architecture-reviewer: Codex TOML の出力に severity グルーピングを揃えるか判断する。
 - implement-feature-safely: Codex 版に明示の報告ステップを追加するか判断する。
+- judge-agent-eval: 初回運用後、実際の判定パターンを見て Claude/Codex ラッパーの記述粒度を調整する余地がないか次回ビルドで確認する。

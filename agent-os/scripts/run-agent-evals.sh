@@ -16,7 +16,7 @@ Usage:
   run-agent-evals.sh --adapter <dir> --list
   run-agent-evals.sh --adapter <dir> --show <eval-name>
   run-agent-evals.sh --adapter <dir> --check <eval-name> [--exec]
-  run-agent-evals.sh --adapter <dir> --record <eval-name> --result pass|fail --model <model-name> [--notes <text>]
+  run-agent-evals.sh --adapter <dir> --record <eval-name> --result pass|fail --model <model-name> [--notes <text>] [--judge-notes <text>] [--transcript <path>]
 
 <dir> must contain .agent-os/evals.md.
 
@@ -53,15 +53,32 @@ Modes (exactly one required):
                           as their working directory, not the caller's cwd.
   --record <name>        Append a result row to the "## Results" table.
                           Requires --result pass|fail and --model <name>;
-                          --notes <text> is optional.
+                          --notes <text>, --judge-notes <text>, and
+                          --transcript <path> are optional.
+                          --judge-notes is the independent judge's verdict
+                          summary (it should include the judge model's
+                          name); --transcript is the path to the run
+                          transcript that was graded. Without
+                          --judge-notes, the Judge cell records
+                          "unjudged". If the existing "## Results" table
+                          has the legacy 5 columns (no Judge column), its
+                          header and separator are extended in place with
+                          a Judge column; existing data rows are left
+                          untouched.
 
 Options:
-  --adapter <dir>   Directory containing .agent-os/evals.md (required).
-  --exec            With --check, execute allow-listed validation commands.
-  --result <v>      With --record, "pass" or "fail".
-  --model <name>    With --record, the model/agent name used for the run.
-  --notes <text>    With --record, free-text notes (pipes/newlines stripped).
-  --help            Show this help text and exit.
+  --adapter <dir>     Directory containing .agent-os/evals.md (required).
+  --exec              With --check, execute allow-listed validation commands.
+  --result <v>        With --record, "pass" or "fail".
+  --model <name>      With --record, the model/agent name used for the run.
+  --notes <text>      With --record, free-text notes (pipes/newlines stripped).
+  --judge-notes <text>  With --record, the independent judge's verdict
+                        summary (pipes/newlines stripped); omit to record
+                        "unjudged" in the Judge column.
+  --transcript <path>   With --record, path to the run transcript
+                        (pipes/newlines stripped); appended to the Judge
+                        cell as "; transcript: <path>".
+  --help              Show this help text and exit.
 
 Exit codes:
   0   success (list/show/record done; check with no failures)
@@ -81,6 +98,8 @@ EXEC_FLAG=0
 RESULT_VAL=""
 MODEL_VAL=""
 NOTES_VAL=""
+JUDGE_NOTES_VAL=""
+TRANSCRIPT_VAL=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -138,6 +157,16 @@ while [[ $# -gt 0 ]]; do
       NOTES_VAL="$2"
       shift 2
       ;;
+    --judge-notes)
+      [[ $# -ge 2 ]] || { echo "ERROR: --judge-notes requires a value" >&2; exit 2; }
+      JUDGE_NOTES_VAL="$2"
+      shift 2
+      ;;
+    --transcript)
+      [[ $# -ge 2 ]] || { echo "ERROR: --transcript requires a value" >&2; exit 2; }
+      TRANSCRIPT_VAL="$2"
+      shift 2
+      ;;
     *)
       echo "ERROR: unknown argument: $1" >&2
       usage >&2
@@ -169,8 +198,8 @@ if [[ "$EXEC_FLAG" -eq 1 && "$MODE" != "check" ]]; then
   exit 2
 fi
 
-if [[ -n "$RESULT_VAL" || -n "$MODEL_VAL" || -n "$NOTES_VAL" ]] && [[ "$MODE" != "record" ]]; then
-  echo "ERROR: --result/--model/--notes are only valid with --record" >&2
+if [[ -n "$RESULT_VAL" || -n "$MODEL_VAL" || -n "$NOTES_VAL" || -n "$JUDGE_NOTES_VAL" || -n "$TRANSCRIPT_VAL" ]] && [[ "$MODE" != "record" ]]; then
+  echo "ERROR: --result/--model/--notes/--judge-notes/--transcript are only valid with --record" >&2
   exit 2
 fi
 
@@ -630,9 +659,34 @@ run_record() {
   notes="${notes//$'\r'/ }"
   notes="${notes//|/}"
 
+  # Sanitize judge-notes and transcript exactly like notes, so the Judge
+  # cell never breaks the markdown table.
+  local judge_notes="$JUDGE_NOTES_VAL"
+  judge_notes="${judge_notes//$'\n'/ }"
+  judge_notes="${judge_notes//$'\r'/ }"
+  judge_notes="${judge_notes//|/}"
+
+  local transcript="$TRANSCRIPT_VAL"
+  transcript="${transcript//$'\n'/ }"
+  transcript="${transcript//$'\r'/ }"
+  transcript="${transcript//|/}"
+
+  # Build the Judge cell: "unjudged" if no judge-notes were supplied,
+  # otherwise the sanitized judge-notes text, with the transcript path
+  # (if any) appended.
+  local judge_cell
+  if [[ -z "$judge_notes" ]]; then
+    judge_cell="unjudged"
+  else
+    judge_cell="$judge_notes"
+  fi
+  if [[ -n "$transcript" ]]; then
+    judge_cell="$judge_cell; transcript: $transcript"
+  fi
+
   local today
   today="$(date +%F)"
-  local new_row="| $today | $target | $MODEL_VAL | $RESULT_VAL | $notes |"
+  local new_row="| $today | $target | $MODEL_VAL | $RESULT_VAL | $notes | $judge_cell |"
 
   # tmp_file is created alongside EVALS_FILE, i.e. inside ao_dir, which
   # the guard above already verified is not a symlink and physically
@@ -657,8 +711,8 @@ run_record() {
         print ""
         print "## Results"
         print ""
-        print "| Date | Eval | Model | Pass/Fail | Notes |"
-        print "|------|------|-------|-----------|-------|"
+        print "| Date | Eval | Model | Pass/Fail | Notes | Judge |"
+        print "|------|------|-------|-----------|-------|-------|"
         print newrow
         exit
       }
@@ -668,15 +722,29 @@ run_record() {
       header_line = 0
       if (i <= n && lines[i] ~ /^\|.*Date.*\|.*Eval.*\|/) header_line = i
       if (header_line > 0) {
-        print lines[header_line]
+        header = lines[header_line]
+        has_judge = (header ~ /\|[[:space:]]*Judge[[:space:]]*\|/)
+        if (!has_judge) {
+          # Legacy 5-column table: extend the header and its separator
+          # row in place with a Judge column. Existing data rows below
+          # are left untouched (they simply have one fewer cell; the
+          # new row appended for this run is the first 6-column row).
+          sub(/\|[[:space:]]*$/, "| Judge |", header)
+        }
+        print header
         i++
-        if (i <= n && lines[i] ~ /^\|[-| ]+\|$/) { print lines[i]; i++ }
+        if (i <= n && lines[i] ~ /^\|[-| ]+\|$/) {
+          sep = lines[i]
+          if (!has_judge) sub(/\|[[:space:]]*$/, "|-------|", sep)
+          print sep
+          i++
+        }
         while (i <= n && lines[i] ~ /^\|/) { print lines[i]; i++ }
         print newrow
         while (i <= n) { print lines[i]; i++ }
       } else {
-        print "| Date | Eval | Model | Pass/Fail | Notes |"
-        print "|------|------|-------|-----------|-------|"
+        print "| Date | Eval | Model | Pass/Fail | Notes | Judge |"
+        print "|------|------|-------|-----------|-------|-------|"
         print newrow
         while (i <= n) { print lines[i]; i++ }
       }

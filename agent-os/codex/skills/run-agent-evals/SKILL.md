@@ -15,11 +15,17 @@ this file is a compact Codex-facing pointer, not a replacement.
    the absence of any explicitly forbidden behavior. The script does not perform the task.
 3. Use `--check <name>` to see the Validation command(s); only pass `--exec` for a command
    listed verbatim in `.agent-os/command-map.md` — the script refuses anything else.
-4. Record each result with `--record <name> --result pass|fail --model <name> [--notes <text>]`.
-5. Route any failure to `.agent-os/failure-log.md` and, if the same
+4. Save a run transcript to `.agent-os/eval-transcripts/<eval-name-slug>-<YYYY-MM-DD>.md`
+   (commands run, files changed, final self-assessed report).
+5. Record each result with `--record <name> --result pass|fail --model <name>
+   [--notes <text>] [--transcript <path>]`. Without `--judge-notes` the Judge
+   cell records `unjudged`.
+6. Request grading from `judge-agent-eval`, run by an independent, stronger
+   model — never by yourself — passing the eval name and transcript path.
+7. Route any failure to `.agent-os/failure-log.md` and, if the same
    failure pattern recurs, propose it as a rule candidate (via
    `learn-from-feedback` / `improve-instructions`).
-6. Run this workflow whenever `AGENTS.md`, a skill, or
+8. Run this workflow whenever `AGENTS.md`, a skill, or
    `.agent-os/learned-rules.md` changes, to confirm no regression was
    introduced.
 
@@ -37,3 +43,5 @@ this file is a compact Codex-facing pointer, not a replacement.
 - Reporting a scenario as passing when a forbidden behavior occurred.
 - Skipping the failure-log/rule-candidate step after a failed eval.
 - Modifying source files as part of running an eval.
+- Acting as your own judge — never supply `--judge-notes` for a run you
+  performed yourself; ungraded rows stay `unjudged`.

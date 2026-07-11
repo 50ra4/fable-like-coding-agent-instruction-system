@@ -18,6 +18,11 @@ When to run these:
 
 This file starts with no evals. Add one per rule or per recurring
 failure that is important enough to verify automatically or by hand.
+
+Transcripts & judging:
+- The executing model saves a run transcript to .agent-os/eval-transcripts/<eval-name-slug>-<YYYY-MM-DD>.md.
+- A stronger, independent model grades the run via the judge-agent-eval skill; its notes land in the Judge column.
+- Rows recorded without judge notes show "unjudged" — treat an unjudged pass as provisional.
 -->
 
 ## Evals
@@ -224,10 +229,10 @@ Learning check:
 Record every eval run here, pass or fail, so drift over time is visible.
 -->
 
-| Date | Eval | Model | Pass/Fail | Notes |
-|------|------|-------|-----------|-------|
+| Date | Eval | Model | Pass/Fail | Notes | Judge |
+|------|------|-------|-----------|-------|-------|
 
 <!--
 Example row (delete me):
-| 2026-03-10 | Payments integration test uses the sandbox, not a mock | claude-sonnet-5 | Pass | Ran clean, sandbox host confirmed in logs |
+| 2026-03-10 | Payments integration test uses the sandbox, not a mock | claude-sonnet-5 | Pass | Ran clean, sandbox host confirmed in logs | unjudged |
 -->

@@ -46,5 +46,5 @@ Learning check:
 
 ## Results
 
-| Date | Eval | Model | Pass/Fail | Notes |
-|------|------|-------|-----------|-------|
+| Date | Eval | Model | Pass/Fail | Notes | Judge |
+|------|------|-------|-----------|-------|-------|
