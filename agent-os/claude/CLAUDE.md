@@ -28,6 +28,7 @@ If `.agent-os/` exists in this project, read before making any change:
 - `adapt-to-project` — turn bootstrap output into this project's CLAUDE.md/AGENTS.md and `.agent-os/` adapter.
 - `learn-from-feedback` — a correction or review comment just happened; record and classify it now.
 - `improve-instructions` — instructions have grown noisy or contradictory; propose a cleanup (approval required).
+- `distill-rules` — (Agent OS builder-model task, like fable-build) semantically cluster logs, propose rule promotions/merges/conflict resolutions with verbatim evidence; diffs require approval.
 - `generate-agent-files` — regenerate the Claude/Codex platform files from the Global OS plus the adapter.
 - `fable-build` — (Agent OS source repo only) builder-model regeneration of claude/codex wrappers with parity audit; diffs require approval.
 - `run-agent-evals` — instructions just changed, or it's time to check for behavior regressions.
