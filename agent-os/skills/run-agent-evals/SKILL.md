@@ -25,7 +25,7 @@ Choose evals that exercise: a small bug fix, a feature addition, adding tests, a
 
 ## Procedure
 
-1. Use `scripts/run-agent-evals.sh --adapter <dir> --list` to enumerate the evals in `.agent-os/evals.md` and their last recorded result; pick one or more matching the perspectives above. If a perspective has no eval yet, note the gap for `improve-instructions` rather than skip silently.
+1. Use `scripts/run-agent-evals.sh --adapter <dir> --list` to enumerate the evals in `.agent-os/evals.md` and their last recorded result; pick one or more matching the perspectives above. If a perspective has no eval yet, note the gap for `improve-instructions` rather than skip silently — drafting the missing eval itself is `synthesize-evals`' job (builder model), not something to improvise mid-session.
 2. Run `scripts/run-agent-evals.sh --adapter <dir> --show <eval-name>` to read the full eval block before starting.
 3. Perform the eval's Task yourself, exactly as specified, using the project's real commands from `command-map.md` — not a simulated shortcut. The script does not do this part; it only enumerates, checks, and records.
 4. Run `scripts/run-agent-evals.sh --adapter <dir> --check <eval-name>` to see the Validation command(s). Only add `--exec` to actually run one, and only when it appears verbatim in `.agent-os/command-map.md` — the script refuses to run anything not listed there, and never executes a "Manual review" style command.

@@ -10,7 +10,7 @@ this file is a compact Codex-facing pointer, not a replacement.
 
 ## Summary
 
-1. Load the scenarios recorded in `.agent-os/evals.md` — `scripts/run-agent-evals.sh --adapter <dir> --list` enumerates them with their last result, and `--show <name>` prints one in full.
+1. Load the scenarios recorded in `.agent-os/evals.md` — `scripts/run-agent-evals.sh --adapter <dir> --list` enumerates them with their last result, and `--show <name>` prints one in full. A perspective with no eval yet is a gap for `improve-instructions`/`synthesize-evals`, not something to skip or improvise.
 2. For each scenario, run it yourself and check both the stated pass criteria and
    the absence of any explicitly forbidden behavior. The script does not perform the task.
 3. Use `--check <name>` to see the Validation command(s); only pass `--exec` for a command

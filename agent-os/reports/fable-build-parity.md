@@ -2,9 +2,9 @@
 
 単一の累積レポート。`fable-build` の各ビルドはこのファイルにマージする（追記で2つ目のレポートブロックを作らない）。
 
-- Last build: 2026-07-11（issue #5: distill-rules 追加ビルド + improve-instructions/learn-from-feedback への相互参照追加）
+- Last build: 2026-07-11（issue #6: synthesize-evals 追加ビルド + improve-instructions/run-agent-evals への相互参照追加）
 - Builder: Fable（ビルダーモデル）
-- 対象: canonical 14 スキル（`distill-rules` 新規追加）× Claude/Codex ラッパー、および agent 定義 6 ペア（`distill-rules` に対応する新規 agent 定義はなし — fable-build と同じく手書きラッパーのみのビルダー系スキル）
+- 対象: canonical 15 スキル（`synthesize-evals` 新規追加）× Claude/Codex ラッパー、および agent 定義 6 ペア（`synthesize-evals` に対応する新規 agent 定義はなし — fable-build/distill-rules と同じく手書きラッパーのみのビルダー系スキル）
 - 手法: 各 canonical スキルの拘束項目（Procedure の必須ステップ / Forbidden / Done criteria）を抽出し、Claude ラッパーと Codex ラッパーが「文言は違っても同じ振る舞いをプロンプトするか」を突き合わせた。字面 diff ではなく意味比較。スクリプト（`scripts/fable-build.sh`、`scripts/detect-rule-conflicts.sh --pairs`）は列挙・diff 提示・形式検証・機械的候補ペア列挙のみで、この判定には関与していない。
 
 ## 判定基準
@@ -22,6 +22,7 @@
 | learn-from-feedback | 逐語記録・7分類・2回で active 昇格・矛盾の表面化・曖昧ルール禁止・Rule フォーマット: 両者 OK | canonical step 9「どのファイルをどの status で更新したか報告」を両ラッパーが同等に省略（deferral がカバー、両者対称）。**（本ビルド）** canonical step 3 に「同一実質・別表現が疑われる場合は文字列一致ではなく `distill-rules` のクラスタリング結果（実効再現回数）を参照する」の1文を追加し、両ラッパーの対応ステップにも同粒度で反映済み（Claude 25行 / Codex 45行、いずれも canonical 80行より短いことを確認済み） | 等価（記録のみ） |
 | improve-instructions | diff+承認プロトコル・削除でなく deprecated・矛盾の表面化・checkpoint 内容の直接昇格禁止: 両者 OK | learned-rules 分割提案（canonical step 9）は両者同等に省略（対称）。**（本ビルド）** canonical step 3 に「機械的チェックを超える意味的な統合・矛盾判定は `distill-rules`（`--pairs` を機械的下処理として利用）へ委譲できる」の1文を追加し、両ラッパーの対応ステップにも同粒度で反映済み（Claude 27行 / Codex 44行、いずれも canonical 67行より短いことを確認済み） | 等価 |
 | distill-rules（新規） | 逐語証拠必須（全提案）・conflict の一方的解決禁止（pair+証拠+選択肢のみ提示）・diff+承認プロトコルのみ（`improve-instructions` 経由）・builder-model 限定（通常コーディングセッションでの実行禁止。インストール済みアダプタの `.agent-os/*` ログへの保守実行は対象内）・削除禁止（deprecated のみ）: 両者 OK | 初回は手書き（本ビルドで `fable-build` と同じ手法・同じ位置付けで作成）。canonical（65行）より短いことを確認済み（Claude 28行 / Codex 44行）、両者とも `skills/distill-rules/SKILL.md` へのポインタを含む。プラットフォーム固有の非対称は意図的に設けていない | 等価 |
+| synthesize-evals（新規） | 逐語 provenance 必須（全 eval）・Forbidden behavior への元失敗の再現必須（識別力）・Validation command の command-map verbatim ゲート（無ければ `"Manual review"`）・既存 eval の無承認削除・書き換え禁止・builder-model 限定（通常コーディングセッション禁止、インストール済みアダプタ保守は対象内）: 両者 OK | 初回は手書き（本ビルドで `distill-rules` と同じ手法・同じ位置付けで作成）。canonical（62行）より短いことを確認済み（Claude 28行 / Codex 45行）、両者とも `skills/synthesize-evals/SKILL.md` へのポインタを含む。プラットフォーム固有の非対称は意図的に設けていない | 等価 |
 | generate-agent-files | ラッパーへの新規手続き禁止・意味乖離禁止・Global 汚染禁止・重複禁止・checkpoint 非対称の扱い: 両者 OK | canonical に fable-build への相互参照 1 行を追加（前回ビルド）。リポジトリ保守メタ情報のためラッパー非反映は正当 | 等価 |
 | fable-build（新規） | 意味判定のスクリプト委譲禁止・無承認上書き禁止・非対称の平坦化禁止・ラッパー行数 < canonical: 両者 OK | 初回は手書き（本ビルドで作成）。Codex 版のみ TOML キー（name/description/developer_instructions）を明記 — プラットフォーム固有形式のため正当 | 等価 |
 | run-agent-evals | forbidden behavior 発生時の pass 禁止・失敗の隠蔽禁止・--exec の command-map ゲート・失敗の failure-log 記録・run transcript の保存（`.agent-os/eval-transcripts/<slug>-<date>.md`）・`--record` への `--judge-model`/`--judge-notes`/`--transcript` 伝播・`judge-agent-eval` への採点依頼・自己採点（自分の実行分に `--judge-notes` を付けない）の禁止・**（レビュー修正）`run-agent-evals.sh` 自身が transcript 未指定/無効（存在しない・空・symlink・adapter 外）での judge 記録を拒否し、`--judge-model` が `--model` と一致する場合も拒否することの明記**: 両者 OK | Learning check への明示言及を両者同等に省略（対称、canonical へ deferral）。Claude「eval 実行と instructions 修正の同時実施禁止」/ Codex「基準の発明禁止」はそれぞれ他方の canonical 記述と矛盾しない補強。新規の transcript/judge 項目、および今回のスクリプト強制の言及は Claude/Codex 双方に同等の粒度で追加済み（非対称なし） | 等価（記録のみ） |
@@ -54,6 +55,8 @@
 12. （issue #5 ビルド）`scripts/detect-rule-conflicts.sh` — `--pairs` モードを新設（`--adapter`/`--file` と併用可）。`Status: active` のルールのみを対象に全ペア（i<j）を機械的な近さのみでスコアリングする（Applies-to の完全一致ターゲット共有 +3/件、Scope 一致 +2、完全一致を除いた残りターゲットのトークン共有 +1（1件のみ、トークン数に比例しない））。Rule 本文の内容・文言比較は一切行わず、意味判定は `distill-rules` に委譲。既存の findings モード（`--pairs` 未指定時）は既存の `parse_rules`/`all_rules` パーサをそのまま再利用し、出力・終了コードとも変更前とバイト単位で同一であることをベースライン diff で確認済み（後述）。`--pairs` は常に exit 0（usage error 時のみ exit 2）。
 13. （issue #5 ビルド）`skills/improve-instructions/SKILL.md`・`claude/skills/improve-instructions/SKILL.md`・`codex/skills/improve-instructions/SKILL.md`、および `skills/learn-from-feedback/SKILL.md`・`claude/skills/learn-from-feedback/SKILL.md`・`codex/skills/learn-from-feedback/SKILL.md` — それぞれの対応ステップに `distill-rules` への相互参照を1文ずつ追加（上記パリティ表の該当行を参照）。ラッパー行数はいずれも canonical 未満のまま。
 14. （PR #12 codex レビュー対応）`skills/distill-rules/SKILL.md`・`claude/skills/distill-rules/SKILL.md`・`codex/skills/distill-rules/SKILL.md`・`claude/CLAUDE.md`・`README.md` — スコープガードの文言を修正。「Agent OS 自身の蓄積知識の蒸留に限定」という誤った制限（インストール済みプロジェクトの `.agent-os/*` ログへの builder モデル保守実行まで禁止してしまう）を除去し、禁止軸を「通常のコーディングセッションの一部として実行すること」に統一。`fable-build` とのアナロジーは「builder-class モデル専用」の点のみ維持し、「ソースリポジトリ限定」の含意を除去。canonical と両ラッパーの意味的パリティを維持（両ラッパーとも canonical より短いまま、ポインタ保持）。
+15. （issue #6 ビルド）`skills/synthesize-evals/SKILL.md`・`claude/skills/synthesize-evals/SKILL.md`・`codex/skills/synthesize-evals/SKILL.md` — 新規作成。15番目の canonical スキルとして、`failure-log.md`/`review-feedback-log.md` の逐語エントリを根本原因・task shape で意味的にクラスタリングし、1クラスタにつき1つの discriminative eval（Forbidden behavior が元の失敗を再現する）を標準 Eval format で起草し、逐語 provenance（HTML コメント）を添付したうえで `improve-instructions` の非破壊的追加フローに流し込む builder-model 専用スキルを定義（`distill-rules` と同じ位置付け）。両ラッパーとも canonical（62行）より短く（Claude 28行 / Codex 45行）、`skills/synthesize-evals/SKILL.md` へのポインタを含むことを確認済み。
+16. （issue #6 ビルド）`skills/improve-instructions/SKILL.md`・`claude/skills/improve-instructions/SKILL.md`・`codex/skills/improve-instructions/SKILL.md`、および `skills/run-agent-evals/SKILL.md`・`claude/skills/run-agent-evals/SKILL.md`・`codex/skills/run-agent-evals/SKILL.md` — それぞれの対応ステップ（`improve-instructions` step 8: eval 提案、`run-agent-evals` step 1: perspective gap の記録）に `synthesize-evals` への相互参照を1文ずつ追加。ラッパー行数はいずれも canonical 未満のまま（improve-instructions: canonical 67行 / Claude 27行 / Codex 46行、run-agent-evals: canonical 93行 / Claude 29行 / Codex 52行）。
 
 ## ドキュメント整合監査（機械的整合のみ）
 
@@ -107,6 +110,14 @@
 - 3つの `distill-rules/SKILL.md`（canonical/claude/codex）すべてに `---` フロントマター（`name:`/`description:`）があること、Claude/Codex 両ラッパーが canonical より行数が少なく、`skills/distill-rules/SKILL.md` という文字列（canonical への差し戻しポインタ）を含むことを確認済み。
 - `improve-instructions`・`learn-from-feedback` の canonical/Claude/Codex 各ファイルで、追加後もラッパーが canonical より行数が少ないことを `awk 'END{print NR}'` で再確認済み（上記パリティ表に行数を記録）。
 
+### 本ビルド（issue #6: synthesize-evals 追加）での検証
+
+- `bash agent-os/scripts/validate-agent-os.sh` → PASS: 94 / WARN: 0 / FAIL: 0（15 スキル登録後。`codex/AGENTS.md` はスキル索引への1行追加で61行となり60行ソフトリミットを超えたため、Custom agents 段落のリラップで60行に再収束させた）。
+- `bash agent-os/scripts/fable-build.sh --list` → PASS: 66 / WARN: 0 / FAIL: 0（15 スキル × 両ラッパー、orphan なし、agent 6 ペア OK、`synthesize-evals` が新規に検出されている）。
+- `bash agent-os/scripts/fable-build.sh --check` → own checks PASS、内部の `validate-agent-os.sh` も PASS: 94 / WARN: 0 / FAIL: 0、overall RESULT: PASS（frontmatter / ラッパー行数 < canonical / `skills/synthesize-evals/SKILL.md` ポインタを含む）。
+- 机上実行テスト（スクラッチアダプタ、コミット対象外）: `failure-log.md` に同一根本原因（検証をスキップし成功を事実として報告）で見出し・文言・タスクが異なる失敗2件を投入。`summarize-learning-log.sh` は両者を無関係と報告（recurrence >= 2 なし・重複見出しなし）— 機械的前処理では捕捉できず意味的クラスタリングが必要なことを実証。手順書に従い1クラスタ→1 eval を標準 Eval format（必須7節）で起草し、「捕まえる回帰」+逐語引用2件の HTML コメント provenance を添付して `evals.md` に投入。
+- 生成 eval のフォーマット互換の実機確認: `run-agent-evals.sh --list` が Task を正しく抽出、`--show` が全節を出力（HTML コメント provenance はパース前に除去され出力に混入しない）、`--check` が Validation command 2件（command-map 掲載コマンド + `Manual review`）を抽出、`--check --exec` は掲載コマンドを adapter ディレクトリで実行して PASS、`Manual review` は MANUAL ゲートで実行拒否。exit 0。
+
 ## 次回ビルドへの持ち越し（記録のみの所見）
 
 - learn-from-feedback: ラッパーが対称に省略している報告系ステップ（更新ファイルの報告）をラッパーに昇格させるか判断する。
@@ -114,3 +125,4 @@
 - implement-feature-safely: Codex 版に明示の報告ステップを追加するか判断する。
 - judge-agent-eval: 初回運用後、実際の判定パターンを見て Claude/Codex ラッパーの記述粒度を調整する余地がないか次回ビルドで確認する。
 - distill-rules: 初回の実運用（実プロジェクトのログでの蒸留）後、クラスタリング・conflict 報告の記述粒度がラッパーで十分か次回ビルドで確認する。
+- synthesize-evals: 初回の実運用（実プロジェクトの失敗ログからの合成）後、クラスタ粒度と Forbidden behavior の具体性がラッパー粒度で十分か次回ビルドで確認する。

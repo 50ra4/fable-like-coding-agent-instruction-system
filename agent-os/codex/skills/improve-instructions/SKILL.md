@@ -26,7 +26,9 @@ this file is a compact Codex-facing pointer, not a replacement.
    skill file that has grown too long) into its own skill, leaving a
    one-line pointer behind.
 5. Add evals to `.agent-os/evals.md` for areas with repeated failures in
-   `.agent-os/failure-log.md`.
+   `.agent-os/failure-log.md`. Drafting a discriminative eval from a
+   failure cluster can be delegated to `synthesize-evals` (consumes
+   `summarize-learning-log.sh` as its mechanical pre-pass).
 6. Present the result as a diff-style proposal; changes are applied only
    after explicit approval.
 
