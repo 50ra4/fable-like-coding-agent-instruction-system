@@ -43,6 +43,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 - `generate-agent-files` — regenerate Claude/Codex platform files from the adapter.
 - `fable-build` — (Agent OS source repo only) builder-model regeneration of claude/codex wrappers with parity audit; diffs require approval.
 - `run-agent-evals` — check for behavior regressions after an instruction change.
+- `judge-agent-eval` — independent-judge grading of an executed eval from its saved transcript.
 - `fix-bug-safely` — reproduce, root-cause, minimal diff, regression test.
 - `implement-feature-safely` — confirm scope, reuse patterns, verified small diffs.
 - `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.

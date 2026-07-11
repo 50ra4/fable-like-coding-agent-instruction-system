@@ -31,6 +31,7 @@ If `.agent-os/` exists in this project, read before making any change:
 - `generate-agent-files` — regenerate the Claude/Codex platform files from the Global OS plus the adapter.
 - `fable-build` — (Agent OS source repo only) builder-model regeneration of claude/codex wrappers with parity audit; diffs require approval.
 - `run-agent-evals` — instructions just changed, or it's time to check for behavior regressions.
+- `judge-agent-eval` — grade another model's eval run from its saved transcript; never judge a run you executed yourself.
 - `fix-bug-safely` — any bug report or unexpected behavior needing a code change: reproduce, root-cause, fix, test.
 - `implement-feature-safely` — any new-functionality request: confirm scope, reuse patterns, verified diffs.
 - `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.
