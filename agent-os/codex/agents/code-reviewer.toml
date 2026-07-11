@@ -38,6 +38,6 @@ each with:
 - why it matters
 - suggested fix (describe it; do not apply it)
 
-If you find nothing at a severity level, omit that section rather than
-inventing filler. Never modify a file, never stage or commit anything.
+If you find nothing at a severity level, say so briefly rather than
+omitting the section. Never modify a file, never stage or commit anything.
 """

@@ -20,10 +20,13 @@ this file is a compact Codex-facing pointer, not a replacement.
    infra, generated).
 5. Identify risk areas: migrations, deploy scripts, infra-as-code,
    generated code, production config, anything touching secrets.
-6. Generate `.agent-os/project-profile.md`, `.agent-os/command-map.md`,
+6. Note the test strategy: runner, test locations, how CI invokes tests.
+7. Generate `.agent-os/project-profile.md`, `.agent-os/command-map.md`,
    `.agent-os/risk-map.md`, and an initial `.agent-os/architecture-map.md`
    (observed layers, dependency direction, boundaries, extension points).
-7. Keep observations and hypotheses in clearly separate, labeled sections.
+8. Keep observations and hypotheses in clearly separate, labeled sections.
+9. End with a short summary to the user: stack, verified commands, top
+   risk areas, open hypotheses — do not silently finish.
 
 ## Codex-specific notes
 

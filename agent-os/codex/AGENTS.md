@@ -41,6 +41,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 - `learn-from-feedback` — record and classify a correction or review comment now.
 - `improve-instructions` — propose a cleanup when instructions grow noisy (approval required).
 - `generate-agent-files` — regenerate Claude/Codex platform files from the adapter.
+- `fable-build` — (Agent OS source repo only) builder-model regeneration of claude/codex wrappers with parity audit; diffs require approval.
 - `run-agent-evals` — check for behavior regressions after an instruction change.
 - `fix-bug-safely` — reproduce, root-cause, minimal diff, regression test.
 - `implement-feature-safely` — confirm scope, reuse patterns, verified small diffs.

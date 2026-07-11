@@ -22,12 +22,14 @@ this file is a compact Codex-facing pointer, not a replacement.
 6. Cross-reference `learned-rules.md` entries with `Status: active`
    matching the changed paths. If `.agent-os/rules/` exists, also check
    the files its `Active rules index` points to — equally binding.
-7. Confirm the project's real test/lint/typecheck commands were actually
+7. Check naming/conventions against `project-profile.md`'s documented
+   conventions, not personal taste.
+8. Confirm the project's real test/lint/typecheck commands were actually
    run and passed — never approve on "looks fine."
-8. Write findings ordered by severity as `file:line` — problem — why it
+9. Write findings ordered by severity as `file:line` — problem — why it
    matters — suggested fix; state "no findings" explicitly where clean.
-9. Give a final verdict: approve, approve with follow-ups, or request
-   changes.
+10. Give a final verdict: approve, approve with follow-ups, or request
+    changes.
 
 ## Codex-specific notes
 
