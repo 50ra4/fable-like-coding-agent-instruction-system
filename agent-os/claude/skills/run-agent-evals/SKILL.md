@@ -7,7 +7,7 @@ The canonical procedure lives in `.agent-os/skills/run-agent-evals/SKILL.md` (in
 
 ## Procedure summary
 
-1. Use `scripts/run-agent-evals.sh --adapter <dir> --list` to enumerate scenarios from `.agent-os/evals.md`, then `--show <name>` to read one in full before starting.
+1. Use `scripts/run-agent-evals.sh --adapter <dir> --list` to enumerate scenarios from `.agent-os/evals.md`, then `--show <name>` to read one in full before starting. A perspective with no eval yet is a gap for `improve-instructions`/`synthesize-evals`, not something to skip or improvise.
 2. Run each scenario yourself and capture the agent's actual behavior/output — the script enumerates and records but does not perform the task.
 3. Score against both the pass criteria and the forbidden-behavior list — a forbidden action is a hard fail even if the final output looks correct. Use `--check <name>` to see the Validation command(s); only add `--exec` for commands listed verbatim in `.agent-os/command-map.md`.
 4. Save a run transcript to `.agent-os/eval-transcripts/<eval-name-slug>-<YYYY-MM-DD>.md` (commands run, files changed, final self-assessed report).
