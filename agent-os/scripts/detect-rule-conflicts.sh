@@ -7,7 +7,18 @@
 # target, a crude opposite-polarity heuristic (do-not/never vs
 # always/must for the same target), and active rules missing required
 # fields. Findings are tagged with the source file each rule came from
-# so cross-file duplicates/overlaps/conflicts are visible.
+# so cross-file duplicates/overlaps/conflicts are visible. This
+# opposite-polarity heuristic is kept as-is for backward compatibility.
+#
+# The default mode above is mechanical findings for direct human review.
+# --pairs is a second, distinct mode: mechanical candidate-pair
+# enumeration meant as pre-processing for the `distill-rules` skill's
+# semantic judgment pass. It keeps only Status: active rules, scores
+# every pair (i<j) on purely structural proximity (shared exact
+# "Applies to" targets, matching Scope, overlapping targets tokens) and
+# prints them sorted by score -- it never inspects Rule body content or
+# wording, that judgment is deliberately left to the model. --pairs
+# always exits 0 (except on a usage error, which exits 2).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,8 +26,8 @@ AGENT_OS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: detect-rule-conflicts.sh --adapter <dir>
-       detect-rule-conflicts.sh --file <learned-rules.md>
+Usage: detect-rule-conflicts.sh --adapter <dir> [--pairs]
+       detect-rule-conflicts.sh --file <learned-rules.md> [--pairs]
 
 Detect duplicate/overlapping/conflicting rules across a project's rule
 files. Read-only; makes no changes.
@@ -31,25 +42,45 @@ Options:
   --adapter <dir>   Directory containing .agent-os/learned-rules.md
                     (and, optionally, .agent-os/rules/*.md).
   --file <path>     Path directly to a single rules file.
+  --pairs           Candidate-pair enumeration mode instead of the
+                    default findings (see below). Combine with
+                    --adapter or --file.
   --help            Show this help text and exit.
 
-Findings reported:
+Findings reported (default mode):
   DUPLICATE RULE NAME     - two or more rules share a name (case-insensitive)
   OVERLAP                 - two or more rules target the same "Applies to" item
   POSSIBLE CONFLICT       - overlapping rules use opposite-polarity language
-                            (do not/never vs always/must)
+                            (do not/never vs always/must) -- kept for
+                            backward compatibility
   MALFORMED               - an active rule is missing a required field
                             (Status/Scope/Rule/Rationale)
 
+--pairs mode (mechanical pre-pass for the `distill-rules` skill):
+  Keeps only Status: active rules, enumerates every pair (i<j), and
+  scores each pair by purely structural proximity -- no Rule-body
+  content or wording is inspected, that semantic judgment is left to
+  the model consuming this output:
+    +3 for EACH shared exact "Applies to" target (case/whitespace
+       normalized)
+    +2 if both rules have the same Scope (case-insensitive)
+    +1 (flat, not per token) if, beyond any exact target matches, the
+       two rules' remaining "Applies to" targets share at least one
+       token (targets split on / whitespace . _ -, lowercased)
+  Pairs are printed sorted by score descending (ties broken
+  alphabetically by the pair's rule names). This mode replaces the
+  default findings output and always exits 0, except on a usage error.
+
 Exit codes:
-  0   no findings
-  1   one or more findings
+  0   no findings (default mode); always in --pairs mode
+  1   one or more findings (default mode only)
   2   usage error
 EOF
 }
 
 ADAPTER_DIR=""
 FILE_ARG=""
+PAIRS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -66,6 +97,10 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || { echo "ERROR: --file requires a value" >&2; exit 2; }
       FILE_ARG="$2"
       shift 2
+      ;;
+    --pairs)
+      PAIRS=1
+      shift
       ;;
     *)
       echo "ERROR: unknown argument: $1" >&2
@@ -91,12 +126,20 @@ declare -a SOURCE_FILES=()
 
 if [[ -n "$FILE_ARG" ]]; then
   SOURCE_FILES=("$FILE_ARG")
-  echo "===== detect-rule-conflicts: $FILE_ARG ====="
+  if [[ "$PAIRS" -eq 1 ]]; then
+    echo "===== detect-rule-conflicts --pairs: $FILE_ARG ====="
+  else
+    echo "===== detect-rule-conflicts: $FILE_ARG ====="
+  fi
 else
   AO_DIR="$ADAPTER_DIR/.agent-os"
   LEARNED_RULES="$AO_DIR/learned-rules.md"
   RULES_DIR="$AO_DIR/rules"
-  echo "===== detect-rule-conflicts: $AO_DIR ====="
+  if [[ "$PAIRS" -eq 1 ]]; then
+    echo "===== detect-rule-conflicts --pairs: $AO_DIR ====="
+  else
+    echo "===== detect-rule-conflicts: $AO_DIR ====="
+  fi
 
   [[ -f "$LEARNED_RULES" ]] && SOURCE_FILES+=("$LEARNED_RULES")
   if [[ -d "$RULES_DIR" ]]; then
@@ -109,6 +152,13 @@ else
 fi
 
 if [[ "${#SOURCE_FILES[@]}" -eq 0 ]]; then
+  if [[ "$PAIRS" -eq 1 ]]; then
+    echo
+    echo "Total active rules: 0"
+    echo
+    echo "(no pairs)"
+    exit 0
+  fi
   echo "WARN: learned-rules.md not found: ${FILE_ARG:-$ADAPTER_DIR/.agent-os/learned-rules.md}"
   echo "RESULT: no findings (nothing to check)"
   exit 0
@@ -264,6 +314,7 @@ all_rules() {
 declare -a SOURCES=()
 declare -a NAMES=()
 declare -a STATUSES=()
+declare -a SCOPES=()
 declare -a HAS_STATUS=()
 declare -a HAS_SCOPE=()
 declare -a HAS_RULE=()
@@ -283,6 +334,7 @@ while IFS=$'\t' read -r tag val; do
     SOURCE) SOURCES[$idx]="$val" ;;
     NAME) NAMES[$idx]="$val" ;;
     STATUS) STATUSES[$idx]="$val" ;;
+    SCOPE) SCOPES[$idx]="$val" ;;
     HAS_STATUS) HAS_STATUS[$idx]="$val" ;;
     HAS_SCOPE) HAS_SCOPE[$idx]="$val" ;;
     HAS_RULE) HAS_RULE[$idx]="$val" ;;
@@ -301,6 +353,132 @@ while IFS=$'\t' read -r tag val; do
 done < <(all_rules)
 
 TOTAL_RULES=$((idx + 1))
+
+# ---- --pairs mode: mechanical candidate-pair enumeration ------------------
+# Pre-processing for the `distill-rules` skill. Reuses the SOURCES/NAMES/
+# STATUSES/SCOPES/APPLIES_LIST arrays parsed above unchanged; scores pairs
+# on structural proximity only (no Rule-body content inspected) and always
+# exits 0. This branch fully replaces the default findings output below.
+do_pairs_output() {
+  local -a active_idx=()
+  local i j st_lower
+  for i in $(seq 0 $((TOTAL_RULES - 1))); do
+    st_lower="$(echo "${STATUSES[$i]:-}" | tr '[:upper:]' '[:lower:]')"
+    [[ "$st_lower" == "active" ]] && active_idx+=("$i")
+  done
+
+  local n_active=${#active_idx[@]}
+  echo
+  echo "Total active rules: $n_active"
+  echo
+
+  if [[ "$n_active" -lt 2 ]]; then
+    echo "(no pairs)"
+    return 0
+  fi
+
+  # Precompute, per rule, lowercased/trimmed targets and their tokens
+  # (split on / whitespace . _ -, empty tokens dropped).
+  local -a targets_lower=()
+  local -a tokens_flat=()
+  for i in $(seq 0 $((TOTAL_RULES - 1))); do
+    local lowered=""
+    if [[ -n "${APPLIES_LIST[$i]:-}" ]]; then
+      lowered="$(printf '%s\n' "${APPLIES_LIST[$i]}" | tr '[:upper:]' '[:lower:]' | sed -E 's/^[ \t]+//; s/[ \t]+$//')"
+    fi
+    targets_lower[$i]="$lowered"
+    if [[ -n "$lowered" ]]; then
+      tokens_flat[$i]="$(printf '%s\n' "$lowered" | tr '/ \t._-' '\n\n\n\n\n\n' | sed '/^$/d')"
+    else
+      tokens_flat[$i]=""
+    fi
+  done
+
+  local -a pair_lines=()
+  local a_pos b_pos score exact_count shared_str t tok
+  local -A seen_a shared_set rem_a_tokens
+  for a_pos in $(seq 0 $((n_active - 2))); do
+    for b_pos in $(seq $((a_pos + 1)) $((n_active - 1))); do
+      i="${active_idx[$a_pos]}"
+      j="${active_idx[$b_pos]}"
+
+      seen_a=()
+      while IFS= read -r t; do
+        [[ -n "$t" ]] && seen_a["$t"]=1
+      done <<<"${targets_lower[$i]}"
+
+      local -a shared=()
+      shared_set=()
+      while IFS= read -r t; do
+        [[ -n "$t" ]] || continue
+        if [[ -n "${seen_a[$t]:-}" ]]; then
+          shared+=("$t")
+          shared_set["$t"]=1
+        fi
+      done <<<"${targets_lower[$j]}"
+
+      exact_count=${#shared[@]}
+      score=$((exact_count * 3))
+
+      local scope_a scope_b
+      scope_a="$(echo "${SCOPES[$i]:-}" | tr '[:upper:]' '[:lower:]')"
+      scope_b="$(echo "${SCOPES[$j]:-}" | tr '[:upper:]' '[:lower:]')"
+      if [[ -n "$scope_a" && "$scope_a" == "$scope_b" ]]; then
+        score=$((score + 2))
+      fi
+
+      # Token overlap beyond exact target matches: tokenize only the
+      # targets that are not themselves an exact shared match.
+      rem_a_tokens=()
+      while IFS= read -r t; do
+        [[ -n "$t" ]] || continue
+        [[ -n "${shared_set[$t]:-}" ]] && continue
+        while IFS= read -r tok; do
+          [[ -n "$tok" ]] && rem_a_tokens["$tok"]=1
+        done < <(printf '%s\n' "$t" | tr '/ \t._-' '\n\n\n\n\n\n' | sed '/^$/d')
+      done <<<"${targets_lower[$i]}"
+
+      local token_overlap=0
+      while IFS= read -r t; do
+        [[ -n "$t" ]] || continue
+        [[ -n "${shared_set[$t]:-}" ]] && continue
+        while IFS= read -r tok; do
+          [[ -n "$tok" ]] || continue
+          if [[ -n "${rem_a_tokens[$tok]:-}" ]]; then
+            token_overlap=1
+          fi
+        done < <(printf '%s\n' "$t" | tr '/ \t._-' '\n\n\n\n\n\n' | sed '/^$/d')
+      done <<<"${targets_lower[$j]}"
+
+      [[ "$token_overlap" -eq 1 ]] && score=$((score + 1))
+
+      shared_str="-"
+      if [[ "$exact_count" -gt 0 ]]; then
+        shared_str=""
+        for t in "${shared[@]}"; do
+          if [[ -z "$shared_str" ]]; then
+            shared_str="\"$t\""
+          else
+            shared_str="$shared_str, \"$t\""
+          fi
+        done
+      fi
+
+      local sort_key line
+      sort_key="$(printf '%05d|%s|%s' $((99999 - score)) "$(echo "${NAMES[$i]}" | tr '[:upper:]' '[:lower:]')" "$(echo "${NAMES[$j]}" | tr '[:upper:]' '[:lower:]')")"
+      line="PAIR score=$score: \"${NAMES[$i]}\" [${SOURCES[$i]:-?}] <-> \"${NAMES[$j]}\" [${SOURCES[$j]:-?}] | scope: ${SCOPES[$i]:-} / ${SCOPES[$j]:-} | shared: $shared_str"
+      pair_lines+=("$sort_key"$'\t'"$line")
+    done
+  done
+
+  printf '%s\n' "${pair_lines[@]}" | sort -t $'\t' -k1,1 | cut -f2-
+  return 0
+}
+
+if [[ "$PAIRS" -eq 1 ]]; then
+  do_pairs_output
+  exit 0
+fi
 
 FINDINGS=0
 

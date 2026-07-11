@@ -15,6 +15,9 @@ this file is a compact Codex-facing pointer, not a replacement.
    split-out active rules live — that describe the same lesson,
    preserving the strongest evidence from each.
 2. Detect and report conflicting rules rather than silently picking one.
+   Same-substance-different-wording merges or keyword-free contradictions
+   can be delegated to `distill-rules`, which consumes
+   `scripts/detect-rule-conflicts.sh --pairs` as its mechanical pre-pass.
 3. Deprecate stale or superseded rules by marking `Status: deprecated`
    with a reason — never delete a rule outright. Consolidate a bloated
    `.agent-os/context-checkpoints.md` the same way, but never promote its

@@ -27,6 +27,7 @@ Turn what the user actually said — a correction, a "don't do that," a repeated
 3. Search `learned-rules.md` and `review-feedback-log.md` for overlap — and, if `.agent-os/rules/` exists, also search `.agent-os/rules/*.md`, where the split-out active rules live:
    - If it matches an existing candidate rule's substance, treat this as a second occurrence.
    - If it contradicts an existing active rule, do not silently overwrite it — surface the conflict explicitly to the user and ask which should hold, or record both with the conflict noted.
+   - When an existing entry is suspected to be the same substance in different wording, consult the `distill-rules` clustering output (effective recurrence counts) rather than relying on literal string matching.
 4. If this is the **first** time this specific feedback has appeared, write a **candidate** rule.
 5. If this is the **second or later** occurrence (same substance, possibly different wording), promote it to an **active** rule in `.agent-os/learned-rules.md`.
 6. When writing any rule, use exactly this format:
