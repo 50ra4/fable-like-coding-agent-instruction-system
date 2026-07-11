@@ -33,7 +33,7 @@ Choose evals that exercise: a small bug fix, a feature addition, adding tests, a
 6. Answer the eval's **Learning check** questions explicitly: which learned rule should have been used, and did the agent use it; which prior failure should not recur, and did it recur.
 7. Save a run transcript to `.agent-os/eval-transcripts/<eval-name-slug>-<YYYY-MM-DD>.md` under the adapter (slug: lowercase, spaces → hyphens). Minimal format: header lines `Eval:`, `Date:`, `Model:`; `## Commands run` (each command with its actual output); `## Files changed`; `## Final report` (self-assessed pass/fail with reasons, plus the Learning check answers). Record only what actually happened — the judge grades against this file.
 8. Record the result with `scripts/run-agent-evals.sh --adapter <dir> --record <eval-name> --result pass|fail --model <name> [--notes <text>] [--transcript <path>]`, which appends a row to the Results table. Without `--judge-notes` the Judge cell records `unjudged`.
-9. Request third-party grading via `judge-agent-eval` from a stronger, independent model, passing the eval name and transcript path. The judge — never the executing model — supplies `--judge-notes`. A result that never gets judged stays `unjudged`; treat an unjudged pass as provisional.
+9. Request third-party grading via `judge-agent-eval` from a stronger, independent model, passing the eval name and transcript path. The judge — never the executing model — records the verdict with `--judge-model <judge-model> --judge-notes "<verdict>"` alongside `--transcript <path>`. A result that never gets judged stays `unjudged`; treat an unjudged pass as provisional. `run-agent-evals.sh` itself refuses to record judge notes without a valid, in-adapter transcript, and refuses a `--judge-model` that equals `--model` — these are script-enforced guarantees, not just a convention to follow.
 10. On failure: write an entry to `.agent-os/failure-log.md` (command, cause, prevention) and consider whether a new or stronger rule is warranted — hand off to `learn-from-feedback` if so.
 11. On a **repeated** failure of the same eval (or same failure shape across evals): escalate to `improve-instructions` rather than patching the same rule again in isolation.
 12. Summarize overall pass/fail rate and flag any eval perspective that is currently untested.
@@ -82,7 +82,7 @@ Learning check:
 - Simulating or shortcutting the task instead of running the project's real commands.
 - Hiding a failing eval or omitting it from the summary.
 - Running a validation command with `--exec` that is not listed verbatim in `.agent-os/command-map.md`, or forcing execution of a "Manual review" style command — `run-agent-evals.sh` refuses both by design.
-- Acting as your own judge — the judge must not be the executing model. Never supply `--judge-notes` for a run you performed yourself; ungraded results stay `unjudged`.
+- Acting as your own judge — the judge must not be the executing model. Never supply `--judge-notes` for a run you performed yourself; ungraded results stay `unjudged`. The script refuses to record when `--judge-model` equals `--model`.
 
 ## Done criteria
 

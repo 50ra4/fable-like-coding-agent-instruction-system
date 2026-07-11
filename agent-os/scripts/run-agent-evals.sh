@@ -53,17 +53,46 @@ Modes (exactly one required):
                           as their working directory, not the caller's cwd.
   --record <name>        Append a result row to the "## Results" table.
                           Requires --result pass|fail and --model <name>;
-                          --notes <text>, --judge-notes <text>, and
-                          --transcript <path> are optional.
+                          --notes <text>, --judge-notes <text>,
+                          --judge-model <name>, and --transcript <path>
+                          are optional, subject to the coherence rules
+                          below.
                           --judge-notes is the independent judge's verdict
-                          summary (it should include the judge model's
-                          name); --transcript is the path to the run
-                          transcript that was graded. Without
-                          --judge-notes, the Judge cell records
-                          "unjudged". If the existing "## Results" table
-                          has the legacy 5 columns (no Judge column), its
-                          header and separator are extended in place with
-                          a Judge column; existing data rows are left
+                          summary; --judge-model is the judge model's own
+                          name (kept structured, not just prose inside
+                          the notes); --transcript is the path to the run
+                          transcript that was graded.
+                          Coherence rules (usage error, exit 2, if
+                          violated):
+                            - --judge-notes requires BOTH --judge-model
+                              and --transcript.
+                            - --judge-model requires --judge-notes.
+                            - --transcript alone (no judge flags) is
+                              allowed -- it records an unjudged row that
+                              still references its transcript.
+                          Whenever --transcript is given (judged or not),
+                          the script validates it and refuses to record
+                          (exit 1) unless it is a real, non-empty,
+                          non-symlink regular file that resolves (after
+                          following relative paths against --adapter
+                          <dir>) to a physical location inside the
+                          adapter root -- guarding against a path that
+                          escapes via ../ or a symlinked ancestor
+                          directory, the same technique already used for
+                          the .agent-os escape gate below.
+                          When --judge-model and --model are equal after
+                          trimming whitespace and lowercasing, the script
+                          refuses to record (exit 1): the judge must not
+                          be the executing model.
+                          Without --judge-notes, the Judge cell records
+                          "unjudged" (plus "; transcript: <path>" if a
+                          transcript was given). With --judge-notes, the
+                          Judge cell records
+                          "<judge-model>: <judge-notes>; transcript: <path>".
+                          If the existing "## Results" table has the
+                          legacy 5 columns (no Judge column), its header
+                          and separator are extended in place with a
+                          Judge column; existing data rows are left
                           untouched.
 
 Options:
@@ -73,19 +102,28 @@ Options:
   --model <name>      With --record, the model/agent name used for the run.
   --notes <text>      With --record, free-text notes (pipes/newlines stripped).
   --judge-notes <text>  With --record, the independent judge's verdict
-                        summary (pipes/newlines stripped); omit to record
-                        "unjudged" in the Judge column.
+                        summary (pipes/newlines stripped); requires both
+                        --judge-model and --transcript; omit all three to
+                        record "unjudged" in the Judge column.
+  --judge-model <name>  With --record, the judge model's own name
+                        (pipes/newlines stripped); requires --judge-notes.
   --transcript <path>   With --record, path to the run transcript
-                        (pipes/newlines stripped); appended to the Judge
-                        cell as "; transcript: <path>".
+                        (pipes/newlines stripped); validated to exist,
+                        be non-empty, be a regular file (not a symlink),
+                        and resolve inside --adapter <dir>; appended to
+                        the Judge cell as "; transcript: <path>".
   --help              Show this help text and exit.
 
 Exit codes:
   0   success (list/show/record done; check with no failures)
   1   --check --exec found a failing or refused validation command, or
       --record refused because .agent-os is a symlink, .agent-os
-      escapes --adapter <dir>, or evals.md is a symlink
-  2   usage error (bad flags, unknown eval name, missing files)
+      escapes --adapter <dir>, evals.md is a symlink, --transcript is
+      missing/empty/a symlink/outside --adapter <dir>, or --judge-model
+      equals --model
+  2   usage error (bad flags, unknown eval name, missing files,
+      --judge-notes without --judge-model or --transcript, or
+      --judge-model without --judge-notes)
 EOF
 }
 
@@ -99,6 +137,7 @@ RESULT_VAL=""
 MODEL_VAL=""
 NOTES_VAL=""
 JUDGE_NOTES_VAL=""
+JUDGE_MODEL_VAL=""
 TRANSCRIPT_VAL=""
 
 while [[ $# -gt 0 ]]; do
@@ -162,6 +201,11 @@ while [[ $# -gt 0 ]]; do
       JUDGE_NOTES_VAL="$2"
       shift 2
       ;;
+    --judge-model)
+      [[ $# -ge 2 ]] || { echo "ERROR: --judge-model requires a value" >&2; exit 2; }
+      JUDGE_MODEL_VAL="$2"
+      shift 2
+      ;;
     --transcript)
       [[ $# -ge 2 ]] || { echo "ERROR: --transcript requires a value" >&2; exit 2; }
       TRANSCRIPT_VAL="$2"
@@ -198,9 +242,28 @@ if [[ "$EXEC_FLAG" -eq 1 && "$MODE" != "check" ]]; then
   exit 2
 fi
 
-if [[ -n "$RESULT_VAL" || -n "$MODEL_VAL" || -n "$NOTES_VAL" || -n "$JUDGE_NOTES_VAL" || -n "$TRANSCRIPT_VAL" ]] && [[ "$MODE" != "record" ]]; then
-  echo "ERROR: --result/--model/--notes/--judge-notes/--transcript are only valid with --record" >&2
+if [[ -n "$RESULT_VAL" || -n "$MODEL_VAL" || -n "$NOTES_VAL" || -n "$JUDGE_NOTES_VAL" || -n "$JUDGE_MODEL_VAL" || -n "$TRANSCRIPT_VAL" ]] && [[ "$MODE" != "record" ]]; then
+  echo "ERROR: --result/--model/--notes/--judge-notes/--judge-model/--transcript are only valid with --record" >&2
   exit 2
+fi
+
+# Flag-coherence rules for --record's judge flags. Checked here at global
+# scope (alongside the combination check above) so obviously-malformed
+# invocations fail fast with a usage error (exit 2) before any of
+# run_record()'s file-system work (symlink gates, mktemp, awk rewrite).
+if [[ "$MODE" == "record" ]]; then
+  if [[ -n "$JUDGE_NOTES_VAL" && -z "$JUDGE_MODEL_VAL" ]]; then
+    echo "ERROR: --judge-notes requires --judge-model (name the judge model that produced the notes)" >&2
+    exit 2
+  fi
+  if [[ -n "$JUDGE_NOTES_VAL" && -z "$TRANSCRIPT_VAL" ]]; then
+    echo "ERROR: --judge-notes requires --transcript (a judged verdict must reference the transcript it was graded from)" >&2
+    exit 2
+  fi
+  if [[ -n "$JUDGE_MODEL_VAL" && -z "$JUDGE_NOTES_VAL" ]]; then
+    echo "ERROR: --judge-model requires --judge-notes (a judge model with no verdict notes is meaningless)" >&2
+    exit 2
+  fi
 fi
 
 EVALS_FILE="$ADAPTER_DIR/.agent-os/evals.md"
@@ -659,26 +722,85 @@ run_record() {
   notes="${notes//$'\r'/ }"
   notes="${notes//|/}"
 
-  # Sanitize judge-notes and transcript exactly like notes, so the Judge
-  # cell never breaks the markdown table.
+  # Sanitize judge-notes, judge-model, and transcript exactly like notes,
+  # so the Judge cell never breaks the markdown table.
   local judge_notes="$JUDGE_NOTES_VAL"
   judge_notes="${judge_notes//$'\n'/ }"
   judge_notes="${judge_notes//$'\r'/ }"
   judge_notes="${judge_notes//|/}"
+
+  local judge_model="$JUDGE_MODEL_VAL"
+  judge_model="${judge_model//$'\n'/ }"
+  judge_model="${judge_model//$'\r'/ }"
+  judge_model="${judge_model//|/}"
 
   local transcript="$TRANSCRIPT_VAL"
   transcript="${transcript//$'\n'/ }"
   transcript="${transcript//$'\r'/ }"
   transcript="${transcript//|/}"
 
+  # Transcript validation: whenever --transcript is given at all (judged
+  # or not), refuse to record unless it is a real, non-empty, non-symlink
+  # regular file that physically resolves inside the adapter root. Same
+  # technique as the .agent-os escape gate above: resolve relative paths
+  # against the adapter dir, then compare pwd -P output against the
+  # already-computed adapter_phys. The recorded cell text still uses the
+  # user-supplied (sanitized) $transcript value, not this resolved path --
+  # this is a validation gate, not a rewrite.
+  if [[ -n "$TRANSCRIPT_VAL" ]]; then
+    local transcript_resolved
+    if [[ "$TRANSCRIPT_VAL" == /* ]]; then
+      transcript_resolved="$TRANSCRIPT_VAL"
+    else
+      transcript_resolved="$ADAPTER_DIR/$TRANSCRIPT_VAL"
+    fi
+
+    if [[ -L "$transcript_resolved" ]]; then
+      echo "ERROR: refusing to record: --transcript $TRANSCRIPT_VAL is a symlink" >&2
+      exit 1
+    fi
+    if [[ ! -f "$transcript_resolved" || ! -s "$transcript_resolved" ]]; then
+      echo "ERROR: refusing to record: --transcript $TRANSCRIPT_VAL does not exist, is not a regular file, or is empty" >&2
+      exit 1
+    fi
+
+    local transcript_dir transcript_dir_phys transcript_base transcript_phys
+    transcript_dir="$(dirname "$transcript_resolved")"
+    transcript_base="$(basename "$transcript_resolved")"
+    transcript_dir_phys="$(cd "$transcript_dir" && pwd -P)"
+    transcript_phys="$transcript_dir_phys/$transcript_base"
+    case "$transcript_phys" in
+      "$adapter_phys"/*|"$adapter_phys")
+        ;;
+      *)
+        echo "ERROR: refusing to record: --transcript $TRANSCRIPT_VAL resolves to $transcript_phys, outside $adapter_phys (a relative path or symlinked ancestor directory escaped --adapter <dir>)" >&2
+        exit 1
+        ;;
+    esac
+  fi
+
+  # Same-model judge refusal: compare --judge-model and --model after
+  # trimming whitespace and lowercasing. Only reachable with a non-empty
+  # judge_model, which the coherence rules above already guarantee comes
+  # paired with --judge-notes and --transcript.
+  if [[ -n "$JUDGE_MODEL_VAL" ]]; then
+    local judge_model_norm model_norm
+    judge_model_norm="$(trim "$JUDGE_MODEL_VAL" | tr '[:upper:]' '[:lower:]')"
+    model_norm="$(trim "$MODEL_VAL" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$judge_model_norm" == "$model_norm" ]]; then
+      echo "ERROR: refusing to record: --judge-model equals --model — the judge must not be the executing model" >&2
+      exit 1
+    fi
+  fi
+
   # Build the Judge cell: "unjudged" if no judge-notes were supplied,
-  # otherwise the sanitized judge-notes text, with the transcript path
+  # otherwise "<judge-model>: <judge-notes>", with the transcript path
   # (if any) appended.
   local judge_cell
   if [[ -z "$judge_notes" ]]; then
     judge_cell="unjudged"
   else
-    judge_cell="$judge_notes"
+    judge_cell="$judge_model: $judge_notes"
   fi
   if [[ -n "$transcript" ]]; then
     judge_cell="$judge_cell; transcript: $transcript"

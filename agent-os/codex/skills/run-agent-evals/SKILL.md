@@ -22,6 +22,10 @@ this file is a compact Codex-facing pointer, not a replacement.
    cell records `unjudged`.
 6. Request grading from `judge-agent-eval`, run by an independent, stronger
    model — never by yourself — passing the eval name and transcript path.
+   Grading records via `--judge-model <judge-model> --judge-notes
+   "<verdict>" --transcript <path>`; the script refuses judge notes
+   without a valid transcript and refuses a judge model equal to the
+   executing model.
 7. Route any failure to `.agent-os/failure-log.md` and, if the same
    failure pattern recurs, propose it as a rule candidate (via
    `learn-from-feedback` / `improve-instructions`).
@@ -44,4 +48,5 @@ this file is a compact Codex-facing pointer, not a replacement.
 - Skipping the failure-log/rule-candidate step after a failed eval.
 - Modifying source files as part of running an eval.
 - Acting as your own judge — never supply `--judge-notes` for a run you
-  performed yourself; ungraded rows stay `unjudged`.
+  performed yourself; ungraded rows stay `unjudged`. The script refuses
+  to record when `--judge-model` equals `--model`.

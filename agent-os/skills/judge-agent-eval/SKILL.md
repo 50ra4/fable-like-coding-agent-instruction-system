@@ -31,7 +31,7 @@ Replace self-graded eval results with third-party grading. The executing model p
 7. Grade the Learning check: which learned rule should have been used, and does the transcript show it was actually consulted and applied — not merely claimed.
 8. Cross-check the self-report against the transcript: flag every claim with no supporting evidence (e.g. "tests passed" but no test command appears in the transcript). Any such mismatch fails the eval and gets an entry in `.agent-os/failure-log.md`.
 9. If a Validation command should be re-run, use only `scripts/run-agent-evals.sh --adapter <dir> --check <eval-name> --exec` — the same command-map gate the executing model is bound by. Never run validation commands through any other path.
-10. Record the verdict: `scripts/run-agent-evals.sh --adapter <dir> --record <eval-name> --result pass|fail --model <executing-model> --judge-notes "<judge-model>: <verdict summary>" --transcript <path>`. Always include your judge model name inside the judge notes.
+10. Record the verdict: `scripts/run-agent-evals.sh --adapter <dir> --record <eval-name> --result pass|fail --model <executing-model> --judge-model <judge-model> --judge-notes "<verdict summary>" --transcript <path>`. The script itself refuses to record a judged verdict with a missing/invalid `--transcript`, or when `--judge-model` equals `--model` — it enforces the transcript-mandatory and never-self-judge rules above, not just this procedure.
 
 ## Outputs
 
@@ -54,5 +54,5 @@ Replace self-graded eval results with third-party grading. The executing model p
 
 - Every Pass criterion, Forbidden behavior, and Learning check question has an explicit verdict with evidence.
 - Self-report/transcript mismatches are flagged, and each mismatch is logged in `failure-log.md`.
-- The Results row carries the judge notes (including the judge model name) and the transcript path.
+- The Results row carries the judge model, judge notes, and the transcript path.
 - Nothing was graded without a transcript.

@@ -23,6 +23,7 @@ Transcripts & judging:
 - The executing model saves a run transcript to .agent-os/eval-transcripts/<eval-name-slug>-<YYYY-MM-DD>.md.
 - A stronger, independent model grades the run via the judge-agent-eval skill; its notes land in the Judge column.
 - Rows recorded without judge notes show "unjudged" — treat an unjudged pass as provisional.
+- Judge rows are structured: the runner enforces --judge-model + a real transcript, and refuses a judge model equal to the executing model.
 -->
 
 ## Evals

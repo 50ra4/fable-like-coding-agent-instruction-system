@@ -27,8 +27,9 @@ workflow — this file is a compact Codex-facing pointer, not a replacement.
 6. Re-run a Validation command only through `--check <name> --exec`, the
    same command-map gate the executing model is bound by.
 7. Record the verdict with `--record <name> --result pass|fail --model
-   <executing-model> --judge-notes "<judge-model>: <summary>" --transcript
-   <path>`, always naming the judge model in the notes.
+   <executing-model> --judge-model <judge-model> --judge-notes "<summary>"
+   --transcript <path>`. The script itself refuses a missing/invalid
+   transcript or a judge model equal to the executing model.
 
 ## Codex-specific notes
 

@@ -134,7 +134,7 @@ bash agent-os/scripts/run-agent-evals.sh --adapter "$TARGET" --record <eval-name
 
 ### LLM-as-judge による第三者採点
 
-eval の実行結果は従来、実行モデルの自己申告でした。`judge-agent-eval` スキルでは、実行モデルが実行トランスクリプトを `.agent-os/eval-transcripts/<eval名スラッグ>-<日付>.md` に保存し、より強い独立した judge モデルがそれを通読して Pass criteria / Forbidden behavior / Learning check を採点します(該当箇所の引用付き)。judge の所見は `run-agent-evals.sh --record --judge-notes --transcript` で Results テーブルの Judge 列に記録され、judge 未実施の結果は `unjudged` として区別されます。judge は実行モデル自身であってはなりません。
+eval の実行結果は従来、実行モデルの自己申告でした。`judge-agent-eval` スキルでは、実行モデルが実行トランスクリプトを `.agent-os/eval-transcripts/<eval名スラッグ>-<日付>.md` に保存し、より強い独立した judge モデルがそれを通読して Pass criteria / Forbidden behavior / Learning check を採点します(該当箇所の引用付き)。judge の所見は `run-agent-evals.sh --record --judge-model --judge-notes --transcript` で Results テーブルの Judge 列に記録され、judge 未実施の結果は `unjudged` として区別されます。judge は実行モデル自身であってはなりません — スクリプト自体が、トランスクリプト無し(または実在しないファイル)での judge 記録と、`--judge-model` が `--model` と一致する記録を拒否します。
 
 ## global layer と project adapter の責務分離
 

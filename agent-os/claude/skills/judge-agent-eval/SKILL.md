@@ -13,7 +13,7 @@ The canonical procedure lives in `.agent-os/skills/judge-agent-eval/SKILL.md` (i
 4. Grade each Pass criterion (met / not met / not verifiable) with a transcript quote as evidence, and check each Forbidden behavior — one occurring is a fail even if the end result looks fine.
 5. Grade the Learning check (rule actually applied vs merely claimed), and flag any self-report claim with no supporting transcript evidence — log mismatches to `.agent-os/failure-log.md`.
 6. Re-run a Validation command only via `--check <name> --exec`, the same command-map gate the executing model is bound by — never any other path.
-7. Record the verdict with `--record <name> --result pass|fail --model <executing-model> --judge-notes "<judge-model>: <verdict summary>" --transcript <path>`, always naming the judge model.
+7. Record the verdict with `--record <name> --result pass|fail --model <executing-model> --judge-model <judge-model> --judge-notes "<verdict summary>" --transcript <path>`. The script itself refuses a missing/invalid transcript or a judge model equal to the executing model.
 
 ## Forbidden
 
