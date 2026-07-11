@@ -49,12 +49,12 @@ Long procedures live in skills, not here — read the relevant skill file before
 - `fix-bug-safely` — reproduce, root-cause, minimal diff, regression test.
 - `implement-feature-safely` — confirm scope, reuse patterns, verified small diffs.
 - `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.
+- `audit-checkpoint` — (builder-model) audit and re-compress the checkpoint: evidence cross-check, cumulative re-consolidation, contamination check; fixes as diffs.
 - `review-changes` — checklist review of a diff: correctness, scope, security, tests.
 
 ## Custom agents
 
-Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer` (diff correctness),
-`architecture-reviewer` (design/boundary review), `test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz, injection risk),
-`bug-investigator` (root cause, no fixing), and `instruction-maintainer` (instruction-improvement proposals).
+Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer` (diff correctness), `architecture-reviewer` (design/boundary review), `test-strategist` (test strategy),
+`security-reviewer` (secrets, authn/authz, injection risk), `bug-investigator` (root cause, no fixing), and `instruction-maintainer` (instruction-improvement proposals).
 
 No project-specific facts belong in this file — those live in `.agent-os/`.

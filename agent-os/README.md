@@ -140,6 +140,10 @@ eval の実行結果は従来、実行モデルの自己申告でした。`judge
 
 eval の起草そのものも、ビルダーモデル（Fable 級）に予約すべき precision-critical なタスクです。実行モデルが自分自身のために eval を書くと、その回帰を持つモデルだけが fail するという識別力（discriminative power）が担保されません — 自作自演の eval は往々にしてそのモデルが既に得意なことしか検証しないからです。`synthesize-evals` スキル（`skills/synthesize-evals/SKILL.md`）は、`failure-log.md` / `review-feedback-log.md` の逐語エントリを根本原因・task shape で意味的にクラスタリングし、1クラスタにつき1つの eval を標準 Eval format で起草します。Forbidden behavior には元の失敗を再現する行動を必ず含め、その回帰を持つモデルが確実に fail するようにします。Validation command は `command-map.md` に一字一句掲載されているコマンドのみを使い、該当がなければ `"Manual review"` とします。各 eval には「捕まえる回帰」の一行説明と、根拠となるログエントリの逐語引用を HTML コメントとして直後に添付します（`run-agent-evals.sh` はパース前にコメントを除去するため、`--show`/`--check` のフォーマット互換性は保たれます）。追加は `improve-instructions` の非破壊的追加ルールに従い、既存 eval の削除・書き換えは常に承認必須です。採点は `judge-agent-eval`（#4）、ルール蒸留は `distill-rules`（#5）の領分であり、`synthesize-evals` はあくまで eval の起草とその根拠提示に責務を限定します。
 
+### checkpoint の監査・高忠実度圧縮（audit-checkpoint）
+
+`context-checkpoint` の Forbidden list（未検証の情報を confirmed として記載する、未実行のテストを passed として記録する、失敗の隠蔽、最新のユーザー指示の欠落）は、これまで checkpoint を書く本人モデルの自制のみに依存していました。`audit-checkpoint` スキル（`skills/audit-checkpoint/SKILL.md`）はその監査者側の執行であり、作成者と同等以下のモデルが監査すると作成者自身の盲点をそのまま継承してしまうため、作成者より強いモデル（Fable 級）が担う builder-model タスクです（`fable-build` / `distill-rules` と同格）。手順は3工程から成ります。①**裏取り**: 「Confirmed facts」「Commands run and results」「Files changed」の各記述を `git diff` / `git log` / 実際の実行記録と突き合わせ、裏付けのない記述は「Assumptions and uncertainties」への降格を提案します（勝手に書き換えるのではなく提案に留めます）。②**再圧縮**: 複数の `# Context Checkpoint` ブロックや重複記述を単一の累積 `# Context Checkpoint` へ再統合し、矛盾は最新のユーザー意図を優先して解消しつつ、supersede された決定は削除せず理由付きで保存します。③**汚染検査**: checkpoint と `learned-rules.md` / `GLOBAL_*` / canonical スキルとの間の双方向コピー（ルールが checkpoint に紛れ込む、あるいは checkpoint の内容がルール側に昇格される）を検出します。ルールへの昇格はあくまで `learn-from-feedback` を経由した場合のみ許可されます。`validate-agent-os.sh` は `context-checkpoints.md` が 200 行を超えると警告（エラーではありません）を出し、この `audit-checkpoint` スキルの実行を促します。すべての修正は `improve-instructions` と同じプロトコルに従い、diff の提示とユーザー承認を経てから適用されます。なお、リポジトリ全体の Global Layer / Project Adapter レイヤ分離の監査はこのスキルのスコープ外で、あくまで checkpoint とルール群の間の汚染検査に責務を限定します。
+
 ## global layer と project adapter の責務分離
 
 - **Global Layer** には、プロジェクトを問わず常に成り立つ最小限の原則だけを書きます。特定の言語・フレームワーク・ディレクトリ構成・コマンドは絶対に書きません。
@@ -195,7 +199,7 @@ agent-os/
 ├── GLOBAL_CLAUDE.md            # Global Layer: Claude Code 固有の差分
 ├── INSTALL.md                  # 導入手順（日本語）
 ├── templates/                   # 各種テンプレート
-├── skills/                      # 15 の canonical スキル
+├── skills/                      # 16 の canonical スキル
 │   ├── project-bootstrap/
 │   ├── project-profile/
 │   ├── adapt-to-project/
@@ -210,6 +214,7 @@ agent-os/
 │   ├── fix-bug-safely/
 │   ├── implement-feature-safely/
 │   ├── context-checkpoint/       # 長時間セッションの checkpoint / handoff summary 用
+│   ├── audit-checkpoint/         # checkpoint の監査・高忠実度再圧縮（Fable 用: handoff 品質保証）
 │   └── review-changes/
 ├── claude/                      # Claude Code 向け生成物
 │   ├── CLAUDE.md

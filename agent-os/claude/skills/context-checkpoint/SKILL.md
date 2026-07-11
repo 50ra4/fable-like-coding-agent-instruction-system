@@ -9,7 +9,7 @@ The canonical procedure lives in `.agent-os/skills/context-checkpoint/SKILL.md` 
 
 1. At a safe, stable boundary (not mid-edit, not with failures unrecorded) — after long work, large tool output, a large diff, before switching phases, or before an intentional compact — update `.agent-os/context-checkpoints.md`.
 2. Capture latest user instructions/constraints first, then confirmed facts, assumptions/uncertainties, files changed/inspected, commands run with real results, known failures, decisions, remaining work, and the next smallest step — keeping each in its own section.
-3. If a checkpoint already exists, merge into one cumulative `# Context Checkpoint` — never append a second block; resolve contradictions in favor of the newest user intent and mark superseded decisions as superseded.
+3. If a checkpoint already exists, merge into one cumulative `# Context Checkpoint` — never append a second block; resolve contradictions in favor of the newest user intent and mark superseded decisions as superseded. At bloat or long-session milestones, have the checkpoint audited via the `audit-checkpoint` skill.
 4. Prefer `.agent-os/context-checkpoints.md` over older conversation memory whenever resuming work after a phase switch or any suspected context loss.
 
 ## Forbidden
