@@ -18,7 +18,9 @@ this file is a compact Codex-facing pointer, not a replacement.
    `.agent-os/learned-rules.md` — and, if `.agent-os/rules/` exists, in
    `.agent-os/rules/*.md`, where the split-out active rules live;
    if so, surface the conflict rather than silently overwriting the
-   older rule.
+   older rule. For a suspected same-substance-different-wording match,
+   consult `distill-rules`' clustering output (effective recurrence
+   counts) rather than literal string matching.
 4. Apply the promotion rule: a single occurrence stays `Status: candidate`;
    the same lesson observed 2 or more times independently is promoted to
    `Status: active` in `.agent-os/learned-rules.md` — or, if `.agent-os/rules/`

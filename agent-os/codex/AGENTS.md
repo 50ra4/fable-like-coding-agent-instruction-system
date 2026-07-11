@@ -40,6 +40,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 - `adapt-to-project` — turn bootstrap output into AGENTS.md and the `.agent-os/` adapter.
 - `learn-from-feedback` — record and classify a correction or review comment now.
 - `improve-instructions` — propose a cleanup when instructions grow noisy (approval required).
+- `distill-rules` — (builder-model) semantic promotion/merge/conflict distillation of learned rules; diff+approval required.
 - `generate-agent-files` — regenerate Claude/Codex platform files from the adapter.
 - `fable-build` — (Agent OS source repo only) builder-model regeneration of claude/codex wrappers with parity audit; diffs require approval.
 - `run-agent-evals` — check for behavior regressions after an instruction change.
@@ -53,8 +54,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 
 Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer`
 (diff correctness), `architecture-reviewer` (design/boundary review),
-`test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz,
-injection risk), `bug-investigator` (root cause, no fixing), and
-`instruction-maintainer` (instruction-improvement proposals).
+`test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz, injection risk),
+`bug-investigator` (root cause, no fixing), and `instruction-maintainer` (instruction-improvement proposals).
 
 No project-specific facts belong in this file — those live in `.agent-os/`.

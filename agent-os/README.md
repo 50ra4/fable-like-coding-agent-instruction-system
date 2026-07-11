@@ -151,6 +151,8 @@ CLAUDE.md、skills、learned-rules.md 等が増えすぎて読みにくくなっ
 - 古くなった・使われなくなったルールを `deprecated` として整理する（削除ではなくマーク）。
 - 数行を超える手順が常時読み込みファイル（CLAUDE.md / AGENTS.md）に紛れ込んでいたら、`skills/` へ移動し、元の場所には一行のポインタだけを残す。
 
+昇格・統合・矛盾解消の**意味的な判断**（文言が違うが同趣旨の指摘の集約と実効 recurrence count の算出、極性語に依存しない矛盾検出）は `distill-rules` スキル（`skills/distill-rules/SKILL.md`）が担います。これは `fable-build` と同じく builder-class モデル（Fable 級）が実行する precision-critical なタスクです。（`fable-build` と異なり Agent OS リポジトリ限定ではなく、インストール済みプロジェクトの `.agent-os/*` ログに対する保守実行も対象です。禁止されるのは通常のコーディングセッション内での実行のみです。）機械的な前処理として `scripts/detect-rule-conflicts.sh --pairs`（active ルールの候補ペアを Scope / Applies to の近さ順に列挙）を使い、すべての昇格・統合・deprecated 提案には支持する証拠エントリの逐語引用が必須で、矛盾は「矛盾ペア＋根拠＋解消案」の形式でユーザー判断に委ねられます。適用は `improve-instructions` と同じ diff＋承認プロトコルに従い、無承認では一切適用されません。
+
 `learned-rules.md` 自体が肥大化した場合（目安: active なルールが10件を超える、またはファイルが300行を超える）は、`scripts/split-learned-rules.sh` で `Status: active` のルールをスコープ別ファイル（`.agent-os/rules/global.md` / `project.md` / `directory.md` / `file-pattern.md`、各ルールの `Scope:` フィールドに従う）へ分割できます。`learned-rules.md` には各ルールへのポインタとなる `## Active rules index` が残り、candidate・deprecated のルールは常に `learned-rules.md` に残ります。分割後は、`CLAUDE.md` / `AGENTS.md` などの常時読み込みチェックリストや各 skill・subagent も、`## Active rules index` が指す `.agent-os/rules/*.md` を読むよう指示されます。分割前と同じく `Status: active` のルールとして拘束力を持つため、`learned-rules.md` だけを読んで分割済みのルールを見落とすことはありません。
 
 ```bash
@@ -189,12 +191,13 @@ agent-os/
 ├── GLOBAL_CLAUDE.md            # Global Layer: Claude Code 固有の差分
 ├── INSTALL.md                  # 導入手順（日本語）
 ├── templates/                   # 各種テンプレート
-├── skills/                      # 13 の canonical スキル
+├── skills/                      # 14 の canonical スキル
 │   ├── project-bootstrap/
 │   ├── project-profile/
 │   ├── adapt-to-project/
 │   ├── learn-from-feedback/
 │   ├── improve-instructions/
+│   ├── distill-rules/             # 意味的ルール蒸留（Fable 用: 昇格・統合・矛盾解消）
 │   ├── generate-agent-files/
 │   ├── fable-build/               # Fable 用ビルド手順（ラッパー再生成 + パリティ監査）
 │   ├── run-agent-evals/
