@@ -31,7 +31,8 @@ this file is a compact Codex-facing pointer, not a replacement.
 ## Codex-specific notes
 
 - Builder-class model only — do not run this inside a normal coding
-  session in an installed target project.
+  session. A dedicated maintenance pass over an installed project's
+  `.agent-os/*` logs is in scope.
 - When reporting a conflict, quote both rules verbatim in the summary so
   the user can decide without re-opening the log files.
 

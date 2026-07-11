@@ -24,5 +24,5 @@ The canonical procedure lives in `.agent-os/skills/distill-rules/SKILL.md` (insi
 
 ## Claude-specific notes
 
-- This is builder-model-only work — never run it as part of a normal coding session in an installed target project.
+- This is builder-model-only work — never run it as part of a normal coding session. Running it as a dedicated maintenance pass over an installed project's `.agent-os/*` logs is in scope.
 - Escalate every detected conflict to the user with both rules' verbatim text; do not resolve it yourself.

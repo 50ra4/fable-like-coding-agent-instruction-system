@@ -17,7 +17,7 @@ This skill produces proposals, not applied changes. It feeds its findings into `
 - When promotion decisions hinge on whether two differently-worded log entries describe the same lesson.
 - When `scripts/detect-rule-conflicts.sh --pairs` reports closely-related active-rule pairs that need semantic judgment beyond opposite-polarity keyword matching.
 - Not for recording a single new piece of feedback — that is `learn-from-feedback`'s job; this skill only re-examines what has already accumulated.
-- Never as part of a normal coding session in an installed target project — this is a builder-class-model task, run only when distilling the Agent OS's own accumulated knowledge, the same way `fable-build` is run only for wrapper regeneration.
+- Never as part of a normal coding session — this is a builder-class-model task, run as a dedicated maintenance pass. Like `fable-build` it belongs to a builder-class model, but unlike `fable-build` it is not limited to the Agent OS source repo: distilling an installed project's own `.agent-os/*` logs is exactly the maintenance this skill exists for.
 
 ## Inputs
 
@@ -55,7 +55,7 @@ A distillation report with:
 - Promoting a one-off preference to global scope or into the Global Layer.
 - Deleting rules — deprecate instead, with a reason.
 - Treating the mechanical scripts' output (`summarize-learning-log.sh`, `detect-rule-conflicts.sh --pairs`) as a semantic verdict rather than a candidate enumeration.
-- Running this distillation with a runtime coding model, or as part of a normal coding session in an installed project.
+- Running this distillation with a runtime coding model, or as part of a normal coding session — a builder-class model running a dedicated maintenance pass over an installed adapter's `.agent-os/*` logs is in scope, not forbidden.
 
 ## Done criteria
 
