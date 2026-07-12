@@ -37,6 +37,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 
 - `project-bootstrap` — first contact with an unfamiliar project; observe only, no changes.
 - `project-profile` — create/update `.agent-os/project-profile.md`, facts vs. hypotheses.
+- `synthesize-project-maps` — (builder-model) whole-repo synthesis of architecture-map/risk-map; evidence required, unobserved areas disclosed, diff-only against existing content.
 - `adapt-to-project` — turn bootstrap output into AGENTS.md and the `.agent-os/` adapter.
 - `learn-from-feedback` — record and classify a correction or review comment now.
 - `improve-instructions` — propose a cleanup when instructions grow noisy (approval required).
@@ -54,7 +55,6 @@ Long procedures live in skills, not here — read the relevant skill file before
 
 ## Custom agents
 
-Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer` (diff correctness), `architecture-reviewer` (design/boundary review), `test-strategist` (test strategy),
-`security-reviewer` (secrets, authn/authz, injection risk), `bug-investigator` (root cause, no fixing), and `instruction-maintainer` (instruction-improvement proposals).
+Specialized, bounded roles live in `.codex/agents/*.toml`: `code-reviewer` (diff correctness), `architecture-reviewer` (design/boundary review), `test-strategist` (test strategy), `security-reviewer` (secrets, authn/authz, injection risk), `bug-investigator` (root cause, no fixing), and `instruction-maintainer` (instruction-improvement proposals).
 
 No project-specific facts belong in this file — those live in `.agent-os/`.

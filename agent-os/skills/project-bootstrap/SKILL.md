@@ -33,7 +33,7 @@ Do not use this skill to make changes. It produces observations only; `adapt-to-
 8. Generate `.agent-os/project-profile.md` (see the `project-profile` skill for section layout).
 9. Generate `.agent-os/command-map.md` — one entry per verified command, each with its evidence source.
 10. Generate `.agent-os/risk-map.md` — dangerous areas from step 5, each with why it is dangerous and what approval is required before touching it.
-11. Generate an initial `.agent-os/architecture-map.md` from what was observed in steps 2-6: layers/modules and their responsibilities, allowed dependency directions, boundaries that must not be crossed, and extension points. Observation only, same discipline as everywhere else in this skill — separate confirmed facts from hypotheses, and leave a section empty (not guessed) if nothing was actually observed for it.
+11. Generate an initial `.agent-os/architecture-map.md` from what was observed in steps 2-6: layers/modules and their responsibilities, allowed dependency directions, boundaries that must not be crossed, and extension points. Observation only, same discipline as everywhere else in this skill — separate confirmed facts from hypotheses, and leave a section empty (not guessed) if nothing was actually observed for it. This initial pass stays deliberately lightweight; the whole-repository deepening of `architecture-map.md` and `risk-map.md` — with evidence attached to every statement — is the `synthesize-project-maps` skill's job (a builder-model pass), never this skill's.
 12. Record observations and hypotheses in separate, clearly labeled sections. Do not create `learned-rules.md` entries yet — bootstrapping is not the same as learning.
 
 ## Outputs

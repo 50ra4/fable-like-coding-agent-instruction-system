@@ -24,6 +24,8 @@ this file is a compact Codex-facing pointer, not a replacement.
 7. Generate `.agent-os/project-profile.md`, `.agent-os/command-map.md`,
    `.agent-os/risk-map.md`, and an initial `.agent-os/architecture-map.md`
    (observed layers, dependency direction, boundaries, extension points).
+   The maps stay initial here — whole-repository deepening belongs to the
+   `synthesize-project-maps` skill (builder-model pass).
 8. Keep observations and hypotheses in clearly separate, labeled sections.
 9. End with a short summary to the user: stack, verified commands, top
    risk areas, open hypotheses — do not silently finish.

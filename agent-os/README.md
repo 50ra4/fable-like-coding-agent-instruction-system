@@ -144,6 +144,10 @@ eval の起草そのものも、ビルダーモデル（Fable 級）に予約す
 
 `context-checkpoint` の Forbidden list（未検証の情報を confirmed として記載する、未実行のテストを passed として記録する、失敗の隠蔽、最新のユーザー指示の欠落）は、これまで checkpoint を書く本人モデルの自制のみに依存していました。`audit-checkpoint` スキル（`skills/audit-checkpoint/SKILL.md`）はその監査者側の執行であり、作成者と同等以下のモデルが監査すると作成者自身の盲点をそのまま継承してしまうため、作成者より強いモデル（Fable 級）が担う builder-model タスクです（`fable-build` / `distill-rules` と同格）。手順は3工程から成ります。①**裏取り**: 「Confirmed facts」「Commands run and results」「Files changed」の各記述を `git diff` / `git log` / 実際の実行記録と突き合わせ、裏付けのない記述は「Assumptions and uncertainties」への降格を提案します（勝手に書き換えるのではなく提案に留めます）。②**再圧縮**: 複数の `# Context Checkpoint` ブロックや重複記述を単一の累積 `# Context Checkpoint` へ再統合し、矛盾は最新のユーザー意図を優先して解消しつつ、supersede された決定は削除せず理由付きで保存します。③**汚染検査**: checkpoint と `learned-rules.md` / `GLOBAL_*` / canonical スキルとの間の双方向コピー（ルールが checkpoint に紛れ込む、あるいは checkpoint の内容がルール側に昇格される）を検出します。ルールへの昇格はあくまで `learn-from-feedback` を経由した場合のみ許可されます。`validate-agent-os.sh` は `context-checkpoints.md` が 200 行を超えると警告（エラーではありません）を出し、この `audit-checkpoint` スキルの実行を促します。すべての修正は `improve-instructions` と同じプロトコルに従い、diff の提示とユーザー承認を経てから適用されます。なお、リポジトリ全体の Global Layer / Project Adapter レイヤ分離の監査はこのスキルのスコープ外で、あくまで checkpoint とルール群の間の汚染検査に責務を限定します。
 
+### architecture-map / risk-map の全体合成（synthesize-project-maps）
+
+`project-bootstrap` が書く `architecture-map.md` / `risk-map.md` の初版は、一セッションの一次観測にすぎません。レイヤー構造・依存方向・責務境界・壊れやすさをリポジトリ全体（コード・設定・CI・git 履歴）から抽出するには一貫した視点での全体読解が必要で、これは `distill-rules` / `synthesize-evals` と同じ理由でビルダーモデル（Fable 級）専用の precision-critical なタスクです — 誤ったマップは無いより悪く、以後の全セッションと `architecture-reviewer` サブエージェントを誤った前提のまま拘束してしまいます。特に git 履歴からの壊れやすさ推定（頻繁なホットフィックス・差し戻し）はコミット数の表面的な集計では足りず、なぜその変更が起きたかの読解を要します。`synthesize-project-maps` スキル（`skills/synthesize-project-maps/SKILL.md`）は、初版作成（`project-bootstrap`）と全体読解による高度化（本スキル）を役割分担し、両マップのすべての記述にファイルパスまたは git 履歴という根拠を必須で添付し、根拠のない記述は仮説として明示します。網羅性の偽装を防ぐため「未観測領域（Unobserved areas）」の明示も両マップに必須です。既存マップに実質的な内容がある場合は上書きせず、`improve-instructions` と同じ diff＋承認プロトコルに従って差分提案として提示します — 両マップは `bootstrap-project.sh` の PROTECTED 学習資産であり、プレースホルダのみの節を埋める場合に限り直接適用できます。`command-map.md` はスコープ外です — コマンドは実行して検証する必要があり、観測専用の本スキルの責務を超えます。
+
 ## global layer と project adapter の責務分離
 
 - **Global Layer** には、プロジェクトを問わず常に成り立つ最小限の原則だけを書きます。特定の言語・フレームワーク・ディレクトリ構成・コマンドは絶対に書きません。
@@ -199,9 +203,10 @@ agent-os/
 ├── GLOBAL_CLAUDE.md            # Global Layer: Claude Code 固有の差分
 ├── INSTALL.md                  # 導入手順（日本語）
 ├── templates/                   # 各種テンプレート
-├── skills/                      # 16 の canonical スキル
+├── skills/                      # 17 の canonical スキル
 │   ├── project-bootstrap/
 │   ├── project-profile/
+│   ├── synthesize-project-maps/   # リポジトリ全体からのマップ合成（Fable 用: 根拠必須・未観測明示）
 │   ├── adapt-to-project/
 │   ├── learn-from-feedback/
 │   ├── improve-instructions/
