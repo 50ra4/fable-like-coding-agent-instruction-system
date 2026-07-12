@@ -16,7 +16,11 @@ usage() {
 Usage: validate-agent-os.sh [--adapter <dir>]
 
 Validate the Agent OS repository structure (required files, SKILL.md
-frontmatter, codex agent TOML keys, and line-count guards).
+frontmatter, codex agent TOML keys, and line-count guards). Also runs a
+mechanical, WARN-only pre-pass over GLOBAL_AGENTS.md/GLOBAL_CLAUDE.md for
+project-flavored tokens (package-manager/build/test tool names) as
+candidate leads for the audit-layer-separation skill's semantic review —
+it never fails the build and never judges layer placement itself.
 
 Options:
   --adapter <dir>   Additionally validate <dir>/.agent-os as an installed
@@ -175,6 +179,28 @@ strip_html_comments() {
   ' "$file"
 }
 
+# Mechanical Global-Layer contamination pre-pass (WARN only, never FAIL).
+# This performs NO semantic judgment about which layer a statement
+# belongs to — that is the audit-layer-separation skill's (builder-model)
+# job. It only flags obviously project-flavored tokens (package-manager
+# and build/test tool names) in GLOBAL_*.md as candidate leads for that
+# skill. False positives are expected and can be ignored (e.g. a tool
+# named as a "what does NOT belong here" example).
+GLOBAL_CONTAMINATION_TOKENS='npm|npx|yarn|pnpm|pip|pipenv|poetry|cargo|gradle|mvn|maven|composer|bundler|rake|tsc|eslint|prettier|pytest|jest|vitest|webpack|vite|makefile'
+
+check_global_layer_contamination() {
+  local f="$1"
+  # Existence is checked elsewhere; this guard is content-only.
+  [[ -f "$f" ]] || return 0
+  local hits
+  hits="$(strip_html_comments "$f" | grep -inEw "($GLOBAL_CONTAMINATION_TOKENS)" || true)"
+  if [[ -n "$hits" ]]; then
+    warn "possible project-specific tokens in Global Layer file (mechanical pre-pass only - semantic placement judgment is the audit-layer-separation skill's job; ignore if false positive): $f"
+    echo "$hits"
+  fi
+  pass
+}
+
 check_line_count() {
   local f="$1"
   if [[ ! -f "$f" ]]; then
@@ -227,6 +253,9 @@ for f in GLOBAL_AGENTS.md GLOBAL_CLAUDE.md README.md INSTALL.md; do
   check_file_exists "$AGENT_OS_ROOT/$f" "$f"
 done
 
+check_global_layer_contamination "$AGENT_OS_ROOT/GLOBAL_AGENTS.md"
+check_global_layer_contamination "$AGENT_OS_ROOT/GLOBAL_CLAUDE.md"
+
 # ---- Templates ------------------------------------------------------------
 TEMPLATES=(
   AGENTS.md.template
@@ -241,7 +270,7 @@ for t in "${TEMPLATES[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/templates/$t" "templates/$t"
 done
 
-# ---- Canonical skills (17) ------------------------------------------------
+# ---- Canonical skills (18) ------------------------------------------------
 CANONICAL_SKILLS=(
   project-bootstrap
   project-profile
@@ -259,6 +288,7 @@ CANONICAL_SKILLS=(
   implement-feature-safely
   context-checkpoint
   audit-checkpoint
+  audit-layer-separation
   review-changes
 )
 for s in "${CANONICAL_SKILLS[@]}"; do
@@ -268,7 +298,7 @@ done
 # ---- Claude assistant wiring ------------------------------------------------
 check_file_exists "$AGENT_OS_ROOT/claude/CLAUDE.md" "claude/CLAUDE.md"
 
-CLAUDE_SKILLS=(project-bootstrap project-profile synthesize-project-maps adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
+CLAUDE_SKILLS=(project-bootstrap project-profile synthesize-project-maps adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint audit-layer-separation review-changes)
 for s in "${CLAUDE_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/claude/skills/$s/SKILL.md"
 done
@@ -286,7 +316,7 @@ for a in "${CODEX_AGENTS[@]}"; do
   check_codex_toml "$AGENT_OS_ROOT/codex/agents/$a.toml"
 done
 
-CODEX_SKILLS=(project-bootstrap project-profile synthesize-project-maps adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
+CODEX_SKILLS=(project-bootstrap project-profile synthesize-project-maps adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint audit-layer-separation review-changes)
 for s in "${CODEX_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/codex/skills/$s/SKILL.md"
 done

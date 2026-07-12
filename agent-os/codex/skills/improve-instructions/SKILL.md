@@ -26,7 +26,11 @@ this file is a compact Codex-facing pointer, not a replacement.
    rules).
 4. Move any procedure longer than a few lines out of `AGENTS.md` (or a
    skill file that has grown too long) into its own skill, leaving a
-   one-line pointer behind.
+   one-line pointer behind. Whether a statement belongs in the Global
+   Layer or the adapter at all can be delegated to
+   `audit-layer-separation` (consumes `validate-agent-os.sh`'s
+   contamination warnings as its mechanical pre-pass; demotion
+   proposals and flags only, never promotion into the Global Layer).
 5. Add evals to `.agent-os/evals.md` for areas with repeated failures in
    `.agent-os/failure-log.md`. Drafting a discriminative eval from a
    failure cluster can be delegated to `synthesize-evals` (consumes
