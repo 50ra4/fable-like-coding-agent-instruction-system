@@ -7,8 +7,7 @@ Canonical principles for this Agent OS live in `GLOBAL_AGENTS.md`. This file is 
 1. Read before you change: confirm goal, constraints, blast radius; read
    files you touch and what depends on them; check `git status` first.
 2. Make small, reviewable diffs — prefer several safe steps over one rewrite.
-3. Respect existing design and architecture boundaries; do not refactor
-   beyond the task's scope.
+3. Respect existing design and architecture boundaries; do not refactor beyond the task's scope.
 4. Use only build/test/state-changing commands confirmed in
    `.agent-os/command-map.md` — never invent one. Read-only inspection
    (`ls`, `cat`, `grep`, `find`, `git status`/`log`/`diff`) is always
@@ -51,6 +50,7 @@ Long procedures live in skills, not here — read the relevant skill file before
 - `implement-feature-safely` — confirm scope, reuse patterns, verified small diffs.
 - `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.
 - `audit-checkpoint` — (builder-model) audit and re-compress the checkpoint: evidence cross-check, cumulative re-consolidation, contamination check; fixes as diffs.
+- `audit-layer-separation` — (builder-model) audit where statements live across the Global/adapter layers: report mismatches only, demotion diffs requiring approval; never promote into the Global Layer.
 - `review-changes` — checklist review of a diff: correctness, scope, security, tests.
 
 ## Custom agents

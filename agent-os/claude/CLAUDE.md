@@ -39,6 +39,7 @@ If `.agent-os/` exists in this project, read before making any change:
 - `implement-feature-safely` — any new-functionality request: confirm scope, reuse patterns, verified diffs.
 - `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.
 - `audit-checkpoint` — (builder-model) checkpoint bloated or handoff quality in doubt: cross-check confirmed facts against git/log evidence, re-consolidate into one cumulative summary, flag rule/checkpoint contamination; fixes as diffs requiring approval.
+- `audit-layer-separation` — (builder-model) semantic audit of statement placement across `GLOBAL_*`, canonical skills, and adapter files: report placement mismatches only, propose demotion diffs requiring approval; never promotes into the Global Layer.
 - `review-changes` — before considering a diff done, or when asked to review a PR.
 
 ## Use subagents for specialized judgment
