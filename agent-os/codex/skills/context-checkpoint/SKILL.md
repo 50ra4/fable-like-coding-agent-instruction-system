@@ -24,7 +24,9 @@ this file is a compact Codex-facing pointer, not a replacement.
 5. If a checkpoint already exists, merge into one cumulative
    `# Context Checkpoint` — never simply append a new block. Resolve
    contradictions in favor of the newest user intent and mark superseded
-   decisions as superseded with a one-line reason.
+   decisions as superseded with a one-line reason. At bloat or
+   long-session milestones, have the checkpoint audited via the
+   `audit-checkpoint` skill.
 6. Reference `.agent-os/learned-rules.md` and other adapter files by name
    only — never copy their content into the checkpoint, or checkpoint
    content into rules.

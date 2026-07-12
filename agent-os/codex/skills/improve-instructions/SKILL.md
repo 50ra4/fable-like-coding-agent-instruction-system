@@ -21,7 +21,9 @@ this file is a compact Codex-facing pointer, not a replacement.
 3. Deprecate stale or superseded rules by marking `Status: deprecated`
    with a reason — never delete a rule outright. Consolidate a bloated
    `.agent-os/context-checkpoints.md` the same way, but never promote its
-   content directly into `learned-rules.md`.
+   content directly into `learned-rules.md`. Consolidation can be
+   delegated to the `audit-checkpoint` skill (same diff-and-approval
+   rules).
 4. Move any procedure longer than a few lines out of `AGENTS.md` (or a
    skill file that has grown too long) into its own skill, leaving a
    one-line pointer behind.

@@ -37,6 +37,7 @@ If `.agent-os/` exists in this project, read before making any change:
 - `fix-bug-safely` — any bug report or unexpected behavior needing a code change: reproduce, root-cause, fix, test.
 - `implement-feature-safely` — any new-functionality request: confirm scope, reuse patterns, verified diffs.
 - `context-checkpoint` — long session, phase switch, or resuming after compaction: merge working state into `.agent-os/context-checkpoints.md`, and re-read it first when resuming.
+- `audit-checkpoint` — (builder-model) checkpoint bloated or handoff quality in doubt: cross-check confirmed facts against git/log evidence, re-consolidate into one cumulative summary, flag rule/checkpoint contamination; fixes as diffs requiring approval.
 - `review-changes` — before considering a diff done, or when asked to review a PR.
 
 ## Use subagents for specialized judgment

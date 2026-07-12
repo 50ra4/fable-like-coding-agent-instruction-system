@@ -27,7 +27,10 @@ Options:
                     exists (the split-by-scope layout), also validates
                     Status: lines in each rules/*.md and warns on any
                     file there not named global.md/project.md/
-                    directory.md/file-pattern.md.
+                    directory.md/file-pattern.md. context-checkpoints.md
+                    is also checked for bloat: more than 200 lines emits
+                    a warning (never a failure) pointing at the
+                    audit-checkpoint skill.
   --help            Show this help text and exit.
 
 Exit codes:
@@ -195,6 +198,28 @@ check_line_count() {
   fi
 }
 
+# 200 lines is a handoff-quality guard, not a context-size limit: past
+# this, a cumulative context-checkpoints.md has likely bloated with
+# duplicated/superseded blocks and should be re-consolidated by the
+# audit-checkpoint skill rather than left to grow unboundedly.
+CHECKPOINT_BLOAT_THRESHOLD=200
+
+check_checkpoint_bloat() {
+  local f="$1"
+  if [[ ! -f "$f" ]]; then
+    # Existence is already checked elsewhere; this guard is content-only.
+    return
+  fi
+  local n
+  n="$(awk 'END{print NR}' "$f")"
+  if [[ "$n" -gt "$CHECKPOINT_BLOAT_THRESHOLD" ]]; then
+    warn "context-checkpoints.md has $n lines (> $CHECKPOINT_BLOAT_THRESHOLD): the cumulative checkpoint has likely bloated - run the audit-checkpoint skill to re-consolidate it into one cumulative handoff summary: $f"
+    pass
+  else
+    pass
+  fi
+}
+
 echo "===== validate-agent-os: checking $AGENT_OS_ROOT ====="
 
 # ---- Top-level required files -------------------------------------------
@@ -216,7 +241,7 @@ for t in "${TEMPLATES[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/templates/$t" "templates/$t"
 done
 
-# ---- Canonical skills (15) ------------------------------------------------
+# ---- Canonical skills (16) ------------------------------------------------
 CANONICAL_SKILLS=(
   project-bootstrap
   project-profile
@@ -232,6 +257,7 @@ CANONICAL_SKILLS=(
   fix-bug-safely
   implement-feature-safely
   context-checkpoint
+  audit-checkpoint
   review-changes
 )
 for s in "${CANONICAL_SKILLS[@]}"; do
@@ -241,7 +267,7 @@ done
 # ---- Claude assistant wiring ------------------------------------------------
 check_file_exists "$AGENT_OS_ROOT/claude/CLAUDE.md" "claude/CLAUDE.md"
 
-CLAUDE_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint review-changes)
+CLAUDE_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
 for s in "${CLAUDE_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/claude/skills/$s/SKILL.md"
 done
@@ -259,7 +285,7 @@ for a in "${CODEX_AGENTS[@]}"; do
   check_codex_toml "$AGENT_OS_ROOT/codex/agents/$a.toml"
 done
 
-CODEX_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint review-changes)
+CODEX_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
 for s in "${CODEX_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/codex/skills/$s/SKILL.md"
 done
@@ -272,6 +298,8 @@ ADAPTER_FILES=(project-profile learned-rules failure-log review-feedback-log eva
 for f in "${ADAPTER_FILES[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/project-adapter/.agent-os/$f.md" "project-adapter/.agent-os/$f.md"
 done
+
+check_checkpoint_bloat "$AGENT_OS_ROOT/project-adapter/.agent-os/context-checkpoints.md"
 
 # ---- The required scripts ------------------------------------------------
 SCRIPTS=(
@@ -311,6 +339,8 @@ if [[ -n "$ADAPTER_DIR" ]]; then
     for f in "${ADAPTER_FILES[@]}"; do
       check_file_exists "$AO/$f.md" "$ADAPTER_DIR/.agent-os/$f.md"
     done
+
+    check_checkpoint_bloat "$AO/context-checkpoints.md"
 
     # bootstrap-project.sh always vendors GLOBAL_AGENTS.md into every
     # installed adapter (GLOBAL_CLAUDE.md is only vendored for --for
