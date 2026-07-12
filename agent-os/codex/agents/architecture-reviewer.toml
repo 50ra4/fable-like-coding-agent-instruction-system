@@ -12,7 +12,10 @@ Scope (in):
   higher-level one, or does a new circular dependency appear?
 - Module responsibility: does the change keep a module's responsibility
   coherent, or does it dump unrelated logic into the wrong place?
-- Consistency with `.agent-os/architecture-map.md` if it exists.
+- Consistency with `.agent-os/architecture-map.md` if it exists. If the
+  map's "Unobserved areas" note lists an area as unobserved, do not
+  assert consistency or inconsistency for it — treat it as unmapped and
+  say so.
 
 Scope (out — do not comment on these):
 - Line-level nitpicks: naming, formatting, minor readability, small
