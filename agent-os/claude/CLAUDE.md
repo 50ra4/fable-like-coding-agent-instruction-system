@@ -25,6 +25,7 @@ If `.agent-os/` exists in this project, read before making any change:
 
 - `project-bootstrap` — first contact with an unfamiliar project; observe stack/commands/risk, no code changes.
 - `project-profile` — create/update `.agent-os/project-profile.md`, facts vs. hypotheses kept separate.
+- `synthesize-project-maps` — (builder-model maintenance task) synthesize architecture-map/risk-map from a whole-repository read; evidence attached to every statement, unobserved areas disclosed, existing map content changed only via diff proposals.
 - `adapt-to-project` — turn bootstrap output into this project's CLAUDE.md/AGENTS.md and `.agent-os/` adapter.
 - `learn-from-feedback` — a correction or review comment just happened; record and classify it now.
 - `improve-instructions` — instructions have grown noisy or contradictory; propose a cleanup (approval required).

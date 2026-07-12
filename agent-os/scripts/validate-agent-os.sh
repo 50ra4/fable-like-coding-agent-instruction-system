@@ -241,10 +241,11 @@ for t in "${TEMPLATES[@]}"; do
   check_file_exists "$AGENT_OS_ROOT/templates/$t" "templates/$t"
 done
 
-# ---- Canonical skills (16) ------------------------------------------------
+# ---- Canonical skills (17) ------------------------------------------------
 CANONICAL_SKILLS=(
   project-bootstrap
   project-profile
+  synthesize-project-maps
   adapt-to-project
   learn-from-feedback
   improve-instructions
@@ -267,7 +268,7 @@ done
 # ---- Claude assistant wiring ------------------------------------------------
 check_file_exists "$AGENT_OS_ROOT/claude/CLAUDE.md" "claude/CLAUDE.md"
 
-CLAUDE_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
+CLAUDE_SKILLS=(project-bootstrap project-profile synthesize-project-maps adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
 for s in "${CLAUDE_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/claude/skills/$s/SKILL.md"
 done
@@ -285,7 +286,7 @@ for a in "${CODEX_AGENTS[@]}"; do
   check_codex_toml "$AGENT_OS_ROOT/codex/agents/$a.toml"
 done
 
-CODEX_SKILLS=(project-bootstrap project-profile adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
+CODEX_SKILLS=(project-bootstrap project-profile synthesize-project-maps adapt-to-project learn-from-feedback improve-instructions distill-rules generate-agent-files fable-build run-agent-evals judge-agent-eval synthesize-evals fix-bug-safely implement-feature-safely context-checkpoint audit-checkpoint review-changes)
 for s in "${CODEX_SKILLS[@]}"; do
   check_skill_md "$AGENT_OS_ROOT/codex/skills/$s/SKILL.md"
 done
